@@ -27,10 +27,20 @@
 
 html {
   scroll-behavior: smooth;
+  /* The root background paints the entire canvas — including the strip iOS
+     Safari leaves below a `fixed` element and any overscroll — so the shader
+     colours reach the very bottom on mobile instead of a pale gap. Solid
+     fallback first, then the matching gradient. */
+  background-color: #e9eefb;
+  background-image: linear-gradient(165deg, #ebedff 0%, #f3f2f8 45%, #e6f5fb 72%, #dbf8ff 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 body {
-  background: var(--bg);
+  /* transparent so the html (shader-coloured) background shows through and the
+     fixed shader canvas isn't covered */
+  background: transparent;
   color: var(--ink);
   font-family: var(--font-sans), sans-serif;
   overflow-x: hidden;
