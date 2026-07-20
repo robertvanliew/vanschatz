@@ -1,4 +1,5 @@
 import { WEDDING } from "@/lib/wedding";
+import CosmicHero from "@/components/CosmicHero";
 
 export type InviteGuest = {
   name: string;
@@ -16,10 +17,10 @@ export default function InvitePage({
 }) {
   return (
     <main>
+      <CosmicHero guestName={guest?.name} />
       {unknownToken && (
         <p>We couldn&apos;t find your invitation — please reach out to Julie &amp; Rob.</p>
       )}
-      {guest && <p>Welcome, {guest.name}</p>}
       <h1>{WEDDING.coupleFull}</h1>
       <p>{WEDDING.dateLabel}</p>
       <p>{WEDDING.arrivalLabel}</p>
