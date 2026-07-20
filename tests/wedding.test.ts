@@ -5,8 +5,8 @@ describe("wedding constants", () => {
   test("facts are exact", () => {
     expect(WEDDING.coupleFull).toBe("Julie & Robert");
     expect(WEDDING.dateLabel).toBe("Saturday, October 17, 2026");
-    expect(WEDDING.arrivalLabel).toBe("Guests arrive 11:30 AM");
-    expect(WEDDING.timeLabel).toBe("12:00 PM – 5:00 PM");
+    expect(WEDDING.timeLabel).toBe("11:30 AM – 5:00 PM");
+    expect(WEDDING.scheduleLabel).toBe("Ceremony at noon, reception to follow");
     expect(WEDDING.venueAddress).toBe(
       "343 Lakeside Road, Orange Lake, Newburgh, NY 12550"
     );

@@ -39,8 +39,8 @@ export function WhenWhere() {
           <p className="mt-2 text-ink-dim">{WEDDING.venueAddress}</p>
           <div className="my-6 h-px bg-gradient-to-r from-transparent via-line to-transparent" />
           <p className="text-lg">{WEDDING.dateLabel}</p>
-          <p className="mt-2 text-gold">{WEDDING.arrivalLabel}</p>
-          <p className="mt-1 text-ink-dim">Celebration {WEDDING.timeLabel}</p>
+          <p className="mt-2 text-gold">{WEDDING.timeLabel}</p>
+          <p className="mt-1 text-ink-dim">{WEDDING.scheduleLabel}</p>
           <a
             href={mapsUrl()}
             target="_blank"
@@ -70,8 +70,7 @@ export function Details() {
         <SectionHeading>Details</SectionHeading>
         <div className="grid gap-6 sm:grid-cols-2">
           {[
-            ["Arrival", "Please arrive by 11:30 AM so we can begin promptly at noon."],
-            ["Celebration", "Ceremony and reception details coming soon."],
+            ["Celebration", "Ceremony at noon, with the reception to follow — 11:30 AM to 5:00 PM."],
             ["RSVP", "Kindly respond using your personal link below."],
           ].map(([title, body]) => (
             <div key={title} className={`${cardClass} p-6`}>
