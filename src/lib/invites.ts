@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { WEDDING } from "@/lib/wedding";
 import { db } from "@/lib/db";
 import { sendMessage } from "@/lib/messaging";
@@ -49,7 +48,11 @@ export async function sendInviteToGuest(
   return { ok: true };
 }
 
-/** Email every guest who has an address and hasn't been invited yet. */
+/**
+ * Email every guest who has an address and hasn't had a *real* invite sent yet.
+ * A simulated send (practice mode, before Resend keys exist) does NOT count as
+ * done, so testing the button now won't block the real send later.
+ */
 export async function sendAllInvites(): Promise<{ sent: number; skipped: number }> {
   const guests = await db.guest.findMany({ include: { reminders: true } });
   let sent = 0;
@@ -60,21 +63,12 @@ export async function sendAllInvites(): Promise<{ sent: number; skipped: number 
       skipped++;
       continue;
     }
-    if (g.reminders.some((r) => r.scheduleKey === INVITE_KEY && r.channel === "email")) {
+    const reallyInvited = g.reminders.some(
+      (r) => r.scheduleKey === INVITE_KEY && r.channel === "email" && !r.simulated
+    );
+    if (reallyInvited) {
       skipped++;
       continue;
-    }
-    // Claim first so overlapping runs can't double-send the same guest.
-    try {
-      await db.reminderLog.create({
-        data: { guestId: g.id, scheduleKey: INVITE_KEY, channel: "email", simulated: true },
-      });
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        skipped++;
-        continue;
-      }
-      throw e;
     }
     try {
       const { simulated } = await sendMessage(
@@ -83,14 +77,16 @@ export async function sendAllInvites(): Promise<{ sent: number; skipped: number 
         inviteBody(g.name, g.token),
         INVITE_SUBJECT
       );
-      if (!simulated) {
-        await db.reminderLog.update({ where: claimWhere(g.id), data: { simulated: false } });
-      }
+      // upsert so the fixed (guest, invite, email) row can't collide, and a
+      // later real send can overwrite an earlier simulated one.
+      await db.reminderLog.upsert({
+        where: claimWhere(g.id),
+        create: { guestId: g.id, scheduleKey: INVITE_KEY, channel: "email", simulated },
+        update: { simulated, sentAt: new Date() },
+      });
       sent++;
     } catch (err) {
-      // Release the claim so it can be retried later.
       console.error(`Failed to send invite to guest ${g.id}:`, err);
-      await db.reminderLog.delete({ where: claimWhere(g.id) }).catch(() => {});
     }
   }
   return { sent, skipped };
