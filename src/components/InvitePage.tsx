@@ -1,5 +1,7 @@
-import { WEDDING } from "@/lib/wedding";
 import CosmicHero from "@/components/CosmicHero";
+import Countdown from "@/components/Countdown";
+import { WhenWhere, Details, Registry, Reveal, SectionHeading } from "@/components/Sections";
+import RsvpCard from "@/components/RsvpCard";
 
 export type InviteGuest = {
   name: string;
@@ -18,17 +20,32 @@ export default function InvitePage({
   return (
     <main>
       <CosmicHero guestName={guest?.name} />
-      {unknownToken && (
-        <p>We couldn&apos;t find your invitation — please reach out to Julie &amp; Rob.</p>
-      )}
-      <h1>{WEDDING.coupleFull}</h1>
-      <p>{WEDDING.dateLabel}</p>
-      <p>{WEDDING.arrivalLabel}</p>
-      <p>{WEDDING.timeLabel}</p>
-      <p>
-        {WEDDING.venueName}, {WEDDING.venueAddress}
-      </p>
-      {!guest && !unknownToken && <p>Please use your personal invitation link to RSVP.</p>}
+      <section className="px-6 py-24">
+        <Reveal>
+          <SectionHeading>Counting down</SectionHeading>
+          <Countdown />
+        </Reveal>
+      </section>
+      <WhenWhere />
+      <Details />
+      <section id="rsvp" className="mx-auto max-w-xl px-6 py-24">
+        <Reveal>
+          <SectionHeading>RSVP</SectionHeading>
+          {guest ? (
+            <RsvpCard guest={guest} />
+          ) : (
+            <p className="text-center text-ink-dim">
+              {unknownToken
+                ? "We couldn't find your invitation — please reach out to Julie & Rob and we'll fix it right up."
+                : "Please use the personal link from your invitation text or email to RSVP."}
+            </p>
+          )}
+        </Reveal>
+      </section>
+      <Registry />
+      <footer className="pb-16 text-center text-sm text-ink-dim">
+        <p className="font-display text-lg italic">With love, Julie &amp; Robert</p>
+      </footer>
     </main>
   );
 }
