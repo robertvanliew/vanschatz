@@ -38,23 +38,25 @@ export function inviteHtml(name: string, token: string): string {
   const url = `${baseUrl()}/invite/${token}`;
   const poster = posterUrl();
   const posterRow = poster
-    ? `<tr><td><img src="${poster}" alt="Julie & Robert" width="600" style="display:block;width:100%;height:auto;border:0;"/></td></tr>`
+    ? `<tr><td><img src="${poster}" alt="Julie &amp; Robert — You're Invited" width="600" style="display:block;width:100%;height:auto;border:0;"/></td></tr>`
     : "";
+  // When a flyer is attached it already carries the names/date/venue, so skip
+  // repeating them; otherwise render a text header so the email still stands alone.
+  const details = poster
+    ? ""
+    : `<div style="font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#8f6f3a;">You&rsquo;re Invited</div>
+       <div style="font-size:42px;color:#5f7554;margin:14px 0 4px;">Julie <span style="color:#8f6f3a;font-style:italic;">&amp;</span> Robert</div>
+       <div style="height:1px;width:120px;background:#e4dccd;margin:20px auto;"></div>
+       <div style="font-size:15px;color:#332c44;letter-spacing:1px;line-height:1.8;margin:0 0 18px;">${WEDDING.dateLabel}<br/>${WEDDING.timeLabel}<br/>${WEDDING.venueName} &middot; Newburgh, NY<br/><span style="color:#6d6582;">${WEDDING.scheduleLabel}</span></div>`;
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3eee7;padding:32px 0;font-family:Georgia,'Times New Roman',serif;">
     <tr><td align="center">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(107,79,150,0.15);">
         ${posterRow}
         <tr><td style="padding:44px 40px 8px;text-align:center;">
-          <div style="font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#8f6f3a;">You&rsquo;re Invited</div>
-          <div style="font-size:42px;color:#5f7554;margin:14px 0 4px;">Julie <span style="color:#8f6f3a;font-style:italic;">&amp;</span> Robert</div>
-          <div style="height:1px;width:120px;background:#e4dccd;margin:20px auto;"></div>
+          ${details}
           <div style="font-size:16px;color:#332c44;">Hi ${name},</div>
-          <p style="font-size:16px;line-height:1.6;color:#6d6582;margin:14px 0;">We&rsquo;re getting married, and we&rsquo;d be honored to have you celebrate with us.</p>
-          <div style="font-size:15px;color:#332c44;letter-spacing:1px;line-height:1.8;margin-top:10px;">
-            ${WEDDING.dateLabel}<br/>${WEDDING.timeLabel}<br/>${WEDDING.venueName} &middot; Newburgh, NY<br/>
-            <span style="color:#6d6582;">${WEDDING.scheduleLabel}</span>
-          </div>
+          <p style="font-size:16px;line-height:1.6;color:#6d6582;margin:14px 0 0;">We&rsquo;re getting married, and we&rsquo;d be honored to have you celebrate with us.</p>
         </td></tr>
         <tr><td style="padding:26px 40px 46px;text-align:center;">
           <a href="${url}" style="display:inline-block;background:#6b4f96;color:#ffffff;text-decoration:none;font-size:16px;padding:14px 44px;border-radius:999px;">RSVP here</a>
