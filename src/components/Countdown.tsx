@@ -35,14 +35,26 @@ export default function Countdown() {
     : [];
 
   return (
-    <div className="flex justify-center gap-4 sm:gap-8" aria-label="Countdown to the wedding">
-      {cells.map(([label, value]) => (
-        <div
-          key={label}
-          className="w-20 rounded-2xl border border-line bg-white/70 py-4 shadow-[0_12px_30px_-20px_rgba(107,79,150,0.4)] backdrop-blur-sm sm:w-24"
-        >
-          <div className="font-display text-3xl sm:text-4xl">{value}</div>
-          <div className="mt-1 text-[10px] uppercase tracking-[0.25em] text-ink-dim">{label}</div>
+    <div
+      className="mx-auto flex max-w-2xl items-stretch justify-center gap-3 sm:gap-5"
+      aria-label="Countdown to the wedding"
+    >
+      {cells.map(([label, value], i) => (
+        <div key={label} className="flex items-center">
+          <div className="flex w-[4.5rem] flex-col items-center rounded-2xl border border-line bg-white/70 px-2 py-4 text-center shadow-[0_12px_30px_-20px_rgba(107,79,150,0.4)] backdrop-blur-sm sm:w-24 sm:py-5">
+            <div className="font-display text-4xl leading-none tabular-nums sm:text-5xl">
+              {String(value).padStart(2, "0")}
+            </div>
+            <div className="mt-2 text-[10px] tracking-[0.28em] text-ink-dim uppercase sm:text-[11px]">
+              {label}
+            </div>
+          </div>
+          {/* hairline separator between tiles, hidden after the last */}
+          {i < cells.length - 1 && (
+            <span aria-hidden className="mx-1 hidden font-display text-2xl text-line sm:inline sm:px-1">
+              ·
+            </span>
+          )}
         </div>
       ))}
     </div>

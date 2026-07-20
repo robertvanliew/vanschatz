@@ -72,19 +72,50 @@ function Raceme({ seed, height = 150 }: { seed: number; height?: number }) {
   );
 }
 
-/** A simple sage leaf used along the vine. */
-function Leaf({ angle, size = 26, tone = "#7d9370" }: { angle: number; size?: number; tone?: string }) {
+/** A sage leaf with a curved midrib, side veins and a soft two-tone fold. */
+function Leaf({
+  angle,
+  size = 26,
+  tone = "#7d9370",
+  uid = "lf",
+}: {
+  angle: number;
+  size?: number;
+  tone?: string;
+  uid?: string;
+}) {
   return (
     <svg
-      viewBox="0 0 20 12"
+      viewBox="0 0 30 16"
       width={size}
-      height={size * 0.6}
+      height={size * 0.53}
       aria-hidden
       style={{ transform: `rotate(${angle}deg)` }}
       className="block"
     >
-      <path d="M1 6 Q 7 -2 19 6 Q 7 14 1 6 Z" fill={tone} opacity="0.85" />
-      <path d="M2 6 L18 6" stroke="#5f7554" strokeWidth="0.6" opacity="0.6" />
+      <defs>
+        <linearGradient id={`${uid}-g`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#a7bd93" />
+          <stop offset="55%" stopColor={tone} />
+          <stop offset="100%" stopColor="#5f7554" />
+        </linearGradient>
+      </defs>
+      {/* short stem */}
+      <path d="M0 8 L4 8" stroke="#6f8763" strokeWidth="0.9" opacity="0.75" />
+      {/* blade — pointed tip, gentle asymmetry */}
+      <path d="M3 8 C 10 0 22 0 29 8 C 22 16 10 16 3 8 Z" fill={`url(#${uid}-g)`} opacity="0.92" />
+      {/* darker lower fold for depth */}
+      <path d="M3 8 C 12 15 22 15 29 8 C 22 12 12 12 3 8 Z" fill="#5f7554" opacity="0.22" />
+      {/* midrib + side veins */}
+      <path d="M4 8 Q 16 7 28 8" stroke="#54683f" strokeWidth="0.5" fill="none" opacity="0.55" />
+      <g stroke="#54683f" strokeWidth="0.35" opacity="0.4">
+        <path d="M10 8 L7 4.5" fill="none" />
+        <path d="M10 8 L7 11.5" fill="none" />
+        <path d="M16 8 L13 4.2" fill="none" />
+        <path d="M16 8 L13 11.8" fill="none" />
+        <path d="M22 8 L19 5" fill="none" />
+        <path d="M22 8 L19 11" fill="none" />
+      </g>
     </svg>
   );
 }
@@ -158,7 +189,7 @@ export default function WisteriaCanopy() {
       <div className="absolute inset-x-0 -top-1 flex justify-between px-2">
         {LEAF_ROW.map((l, i) => (
           <div key={`l${i}`} style={{ transform: l.flip ? "scaleX(-1)" : undefined }}>
-            <Leaf angle={l.angle} size={l.size} tone={l.tone} />
+            <Leaf angle={l.angle} size={l.size} tone={l.tone} uid={`lf${i}`} />
           </div>
         ))}
       </div>
@@ -204,46 +235,6 @@ export default function WisteriaCanopy() {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-/** Petals released from the canopy, drifting down through the hero. */
-export function PetalRain({ count = 12 }: { count?: number }) {
-  const rnd = seeded(53);
-  const petals = Array.from({ length: count }, (_, i) => ({
-    left: rnd() * 100,
-    dur: 9 + rnd() * 8,
-    delay: -rnd() * 16,
-    drift: (rnd() - 0.35) * 12,
-    spin: 180 + rnd() * 360,
-    size: 8 + rnd() * 7,
-    color: ["#c3a8e0", "#a988cf", "#e5bfd2"][i % 3],
-    o: 0.5 + rnd() * 0.4,
-  }));
-
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden select-none">
-      {petals.map((p, i) => (
-        <div
-          key={i}
-          className="petal absolute top-0"
-          style={
-            {
-              left: `${p.left}%`,
-              "--dur": `${p.dur}s`,
-              "--delay": `${p.delay}s`,
-              "--drift": `${p.drift}vw`,
-              "--spin": `${p.spin}deg`,
-              "--petal-o": p.o,
-            } as React.CSSProperties
-          }
-        >
-          <svg viewBox="0 0 12 14" width={p.size} height={p.size * 1.15} className="block">
-            <path d="M6 0 C 10 3 11 8 6 13.5 C 1 8 2 3 6 0 Z" fill={p.color} />
-          </svg>
-        </div>
-      ))}
     </div>
   );
 }

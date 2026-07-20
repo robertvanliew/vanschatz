@@ -20,7 +20,7 @@ export function Reveal({ children, className = "" }: { children: React.ReactNode
 export function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="font-display mb-8 text-center text-4xl font-light italic sm:text-5xl">
-      <span className="aurora-text not-italic">❀</span> {children}
+      {children}
     </h2>
   );
 }

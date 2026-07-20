@@ -1,16 +1,22 @@
 import { WEDDING } from "@/lib/wedding";
-import WisteriaCanopy, { PetalRain } from "@/components/WisteriaCanopy";
+import WisteriaCanopy from "@/components/WisteriaCanopy";
+import PetalField from "@/components/PetalField";
 
 /**
- * Light watercolor hero: paper wash background, animated wisteria canopy
- * draping from the top, petals drifting down, and the couple's names in
- * elegant serif. Server component — all motion is CSS (reduced-motion aware).
+ * Light watercolor hero: a paper wash that fades into the shader background at
+ * its base (so there's no hard seam), an animated wisteria canopy draping from
+ * the top, and the couple's names in sage green. Server component — all motion
+ * is CSS (reduced-motion aware). Falling petals live in a page-wide fixed layer
+ * (PetalField) so they keep drifting as you scroll.
  */
 export default function FloralHero({ guestName }: { guestName?: string }) {
   return (
-    <section className="watercolor-wash paper-grain relative h-[100svh] w-full overflow-hidden">
+    <section className="relative h-[100svh] w-full overflow-hidden">
+      {/* Background wash, masked to dissolve into the shader toward the bottom */}
+      <div className="hero-wash watercolor-wash paper-grain absolute inset-0" aria-hidden />
+
       <WisteriaCanopy />
-      <PetalRain />
+      <PetalField />
 
       <div className="relative z-20 flex h-full flex-col items-center justify-center px-6 text-center">
         <p
@@ -21,11 +27,18 @@ export default function FloralHero({ guestName }: { guestName?: string }) {
         </p>
 
         <h1
-          className="rise-in font-display text-6xl leading-tight font-light tracking-wide sm:text-8xl"
+          className="rise-in aurora-green font-display text-6xl leading-tight font-light tracking-wide sm:text-8xl"
           style={{ "--delay": "0.5s" } as React.CSSProperties}
         >
-          Julie <span className="aurora-text italic">&amp;</span> Robert
+          Julie <span className="italic">&amp;</span> Robert
         </h1>
+
+        <p
+          className="rise-in mt-5 font-display text-xl italic tracking-wide text-ink-dim sm:text-2xl"
+          style={{ "--delay": "0.7s" } as React.CSSProperties}
+        >
+          are getting married — and you are invited
+        </p>
 
         {/* gold thread divider */}
         <div

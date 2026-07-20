@@ -43,3 +43,6 @@ next-env.d.ts
 
 dev.db
 dev.db-journal
+
+# original photo drop (duplicated into public/photos)
+/Photo of Julie & Robert/
