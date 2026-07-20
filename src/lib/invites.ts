@@ -1,27 +1,16 @@
-import fs from "fs";
-import path from "path";
 import { WEDDING } from "@/lib/wedding";
 import { db } from "@/lib/db";
 import { sendMessage } from "@/lib/messaging";
+import { weddingEmailHtml } from "@/lib/email-template";
 
 const INVITE_KEY = "invite";
 const INVITE_SUBJECT = "You're invited — Julie & Robert's wedding";
+const INVITE_INTRO = "We're getting married, and we'd be honored to have you celebrate with us.";
 
 function baseUrl(): string {
   // Prefer an explicit env override; otherwise the production domain so email
   // links never point at localhost.
   return process.env.NEXT_PUBLIC_BASE_URL ?? "https://thevanschatz.com";
-}
-
-/** If a poster image exists in /public, return its public URL (else null). */
-function posterUrl(): string | null {
-  const names = ["invite-poster.jpg", "invite-poster.jpeg", "invite-poster.png", "invite-poster.webp"];
-  for (const name of names) {
-    if (fs.existsSync(path.join(process.cwd(), "public", name))) {
-      return `${baseUrl()}/${name}`;
-    }
-  }
-  return null;
 }
 
 export function inviteBody(name: string, token: string): string {
@@ -31,41 +20,6 @@ export function inviteBody(name: string, token: string): string {
     `Please RSVP with your personal link (let us know how many adults & children): ` +
     `${baseUrl()}/invite/${token}`
   );
-}
-
-/** A designed HTML invitation — reads like a poster in the inbox. */
-export function inviteHtml(name: string, token: string): string {
-  const url = `${baseUrl()}/invite/${token}`;
-  const poster = posterUrl();
-  const posterRow = poster
-    ? `<tr><td><img src="${poster}" alt="Julie &amp; Robert — You're Invited" width="600" style="display:block;width:100%;height:auto;border:0;"/></td></tr>`
-    : "";
-  // When a flyer is attached it already carries the names/date/venue, so skip
-  // repeating them; otherwise render a text header so the email still stands alone.
-  const details = poster
-    ? ""
-    : `<div style="font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#8f6f3a;">You&rsquo;re Invited</div>
-       <div style="font-size:42px;color:#5f7554;margin:14px 0 4px;">Julie <span style="color:#8f6f3a;font-style:italic;">&amp;</span> Robert</div>
-       <div style="height:1px;width:120px;background:#e4dccd;margin:20px auto;"></div>
-       <div style="font-size:15px;color:#332c44;letter-spacing:1px;line-height:1.8;margin:0 0 18px;">${WEDDING.dateLabel}<br/>${WEDDING.timeLabel}<br/>${WEDDING.venueName} &middot; Newburgh, NY<br/><span style="color:#6d6582;">${WEDDING.scheduleLabel}</span></div>`;
-  return `
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3eee7;padding:32px 0;font-family:Georgia,'Times New Roman',serif;">
-    <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(107,79,150,0.15);">
-        ${posterRow}
-        <tr><td style="padding:44px 40px 8px;text-align:center;">
-          ${details}
-          <div style="font-size:16px;color:#332c44;">Hi ${name},</div>
-          <p style="font-size:16px;line-height:1.6;color:#6d6582;margin:14px 0 0;">We&rsquo;re getting married, and we&rsquo;d be honored to have you celebrate with us.</p>
-        </td></tr>
-        <tr><td style="padding:26px 40px 46px;text-align:center;">
-          <a href="${url}" style="display:inline-block;background:#6b4f96;color:#ffffff;text-decoration:none;font-size:16px;padding:14px 44px;border-radius:999px;">RSVP here</a>
-          <p style="font-size:13px;color:#9a93aa;line-height:1.6;margin-top:20px;">Let us know if you can make it, and how many adults &amp; children.<br/>Or open: <a href="${url}" style="color:#8a6db1;">${url}</a></p>
-        </td></tr>
-      </table>
-      <div style="font-style:italic;color:#9a93aa;font-size:14px;margin-top:20px;">With love, Julie &amp; Robert</div>
-    </td></tr>
-  </table>`;
 }
 
 const claimWhere = (guestId: string) => ({
@@ -85,7 +39,7 @@ export async function sendInviteToGuest(
     guest.email,
     inviteBody(guest.name, guest.token),
     INVITE_SUBJECT,
-    inviteHtml(guest.name, guest.token)
+    weddingEmailHtml({ name: guest.name, token: guest.token, intro: INVITE_INTRO })
   );
 
   // Mark as invited (upsert so re-sends just refresh the timestamp).
@@ -125,7 +79,7 @@ export async function sendAllInvites(): Promise<{ sent: number; skipped: number 
         g.email,
         inviteBody(g.name, g.token),
         INVITE_SUBJECT,
-        inviteHtml(g.name, g.token)
+        weddingEmailHtml({ name: g.name, token: g.token, intro: INVITE_INTRO })
       );
       // upsert so the fixed (guest, invite, email) row can't collide, and a
       // later real send can overwrite an earlier simulated one.

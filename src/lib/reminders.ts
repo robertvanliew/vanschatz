@@ -2,6 +2,11 @@ import { Prisma } from "@prisma/client";
 import { daysUntil, WEDDING } from "@/lib/wedding";
 import { db } from "@/lib/db";
 import { sendMessage, type Channel } from "@/lib/messaging";
+import { weddingEmailHtml } from "@/lib/email-template";
+
+const REMINDER_SUBJECT = "A gentle reminder — Julie & Robert's wedding";
+const REMINDER_INTRO =
+  "Just a gentle reminder to let us know if you can join us — we'd so love to celebrate with you.";
 
 export type ScheduleKey = "1month" | "1week" | "3days";
 
@@ -70,7 +75,13 @@ async function executeSends(scheduleKey: string): Promise<number> {
     }
     let simulated: boolean;
     try {
-      ({ simulated } = await sendMessage(p.channel, p.to, reminderBody(guest.name, guest.token)));
+      ({ simulated } = await sendMessage(
+        p.channel,
+        p.to,
+        reminderBody(guest.name, guest.token),
+        REMINDER_SUBJECT,
+        weddingEmailHtml({ name: guest.name, token: guest.token, intro: REMINDER_INTRO })
+      ));
     } catch (e) {
       // Send failed: release the claim so a future run can retry this guest/channel, and
       // isolate the failure so it doesn't abort the rest of the batch.
