@@ -84,19 +84,13 @@ export function Details() {
             <p className="mt-3 text-ink-dim">
               You&apos;re warmly welcome to keep the celebration going at Barb &amp; John&apos;s.
             </p>
-            <p className="mt-3 text-ink-dim">
-              <a
-                href="https://maps.google.com/?q=753+River+Rd,+Newburgh,+NY+12550"
-                target="_blank"
-                rel="noreferrer"
-                className="underline-offset-4 hover:underline"
-              >
-                753 River Rd, Newburgh, NY 12550
-              </a>
-              <br />
-              <a href="tel:+19176565572" className="underline-offset-4 hover:underline">
-                (917) 656-5572
-              </a>
+            {/* Decorative blurred placeholder only — the real address/phone are
+                intentionally not in the page. They're shared on the invitation. */}
+            <p className="mt-3 select-none blur-[5px] text-ink-dim" aria-hidden="true">
+              000 Riverbend Road, Newburgh, NY 12550 · (000) 000-0000
+            </p>
+            <p className="mt-2 text-sm tracking-wide text-gold">
+              The address will be provided on your invitation.
             </p>
           </div>
         </div>
