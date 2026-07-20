@@ -1,21 +1,25 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useSyncExternalStore } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Stars, Float, MeshDistortMaterial } from "@react-three/drei";
 import { motion } from "framer-motion";
 import { WEDDING } from "@/lib/wedding";
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(callback: () => void) {
+  const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
 function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(true); // static until we know (also SSR-safe)
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const onChange = () => setReduced(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return reduced;
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    () => true // server snapshot: render static fallback until hydrated
+  );
 }
 
 function Orb() {
