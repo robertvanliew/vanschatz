@@ -71,7 +71,6 @@ export function Details() {
         <div className="grid gap-6 sm:grid-cols-2">
           {[
             ["Arrival", "Please arrive by 11:30 AM so we can begin promptly at noon."],
-            ["Attire", "Dress code details coming soon."],
             ["Celebration", "Ceremony and reception details coming soon."],
             ["RSVP", "Kindly respond using your personal link below."],
           ].map(([title, body]) => (
@@ -80,6 +79,26 @@ export function Details() {
               <p className="mt-3 text-ink-dim">{body}</p>
             </div>
           ))}
+          <div className={`${cardClass} p-6`}>
+            <h3 className="text-sm tracking-[0.25em] text-gold uppercase">After the Reception</h3>
+            <p className="mt-3 text-ink-dim">
+              You&apos;re warmly welcome to keep the celebration going at Barb &amp; John&apos;s.
+            </p>
+            <p className="mt-3 text-ink-dim">
+              <a
+                href="https://maps.google.com/?q=753+River+Rd,+Newburgh,+NY+12550"
+                target="_blank"
+                rel="noreferrer"
+                className="underline-offset-4 hover:underline"
+              >
+                753 River Rd, Newburgh, NY 12550
+              </a>
+              <br />
+              <a href="tel:+19176565572" className="underline-offset-4 hover:underline">
+                (917) 656-5572
+              </a>
+            </p>
+          </div>
         </div>
       </Reveal>
     </section>
