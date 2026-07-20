@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Space_Grotesk } from "next/font/google";
+import MotionProvider from "@/components/MotionProvider";
 import "./globals.css";
 
 const serif = Cormorant_Garamond({
@@ -19,7 +20,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${serif.variable} ${sans.variable}`}>
-      <body>{children}</body>
+      <body>
+        <MotionProvider>{children}</MotionProvider>
+      </body>
     </html>
   );
 }

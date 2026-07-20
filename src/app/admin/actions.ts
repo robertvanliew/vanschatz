@@ -14,6 +14,7 @@ function sessionValue(): string {
 }
 
 export async function isAdmin(): Promise<boolean> {
+  if (!process.env.ADMIN_PASSWORD) return false;
   const jar = await cookies();
   return jar.get("admin_session")?.value === sessionValue();
 }
@@ -23,8 +24,9 @@ async function requireAdmin(): Promise<void> {
 }
 
 export async function loginAction(formData: FormData): Promise<void> {
+  if (!process.env.ADMIN_PASSWORD) redirect("/admin/login?error=1");
   const password = String(formData.get("password") ?? "");
-  if (password !== (process.env.ADMIN_PASSWORD ?? "")) redirect("/admin/login?error=1");
+  if (password !== process.env.ADMIN_PASSWORD) redirect("/admin/login?error=1");
   const jar = await cookies();
   jar.set("admin_session", sessionValue(), {
     httpOnly: true,
