@@ -68,6 +68,16 @@ export default function InvitePage({
                 : "Please use the personal link from your invitation text or email to RSVP."}
             </p>
           )}
+          <p className="mt-6 text-center text-sm text-ink-dim">
+            Prefer to reply by email? Write to us at{" "}
+            <a
+              href="mailto:robvanliew@gmail.com"
+              className="text-gold underline-offset-4 hover:underline"
+            >
+              robvanliew@gmail.com
+            </a>{" "}
+            — just let us know yes (with how many adults &amp; children) or no.
+          </p>
         </Reveal>
       </section>
       <Registry />
