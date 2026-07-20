@@ -84,9 +84,10 @@ function buildSvg(): string {
   <rect x="46" y="46" width="${W - 92}" height="${H - 92}" fill="none" stroke="#c9ad70" stroke-width="2" opacity="0.55"/>
   ${canopy}${leaves}${petals}
   <g font-family="Georgia, 'Times New Roman', serif" text-anchor="middle">
-    <text x="${CX}" y="540" font-size="30" letter-spacing="14" fill="#8f6f3a">YOU'RE INVITED</text>
-    <text x="${CX}" y="690" font-size="112" fill="url(#names)">${esc(first)} <tspan fill="#8f6f3a" font-style="italic">&amp;</tspan> ${esc(second)}</text>
-    <line x1="${CX - 130}" y1="748" x2="${CX + 130}" y2="748" stroke="#c9ad70" stroke-width="1.5" opacity="0.7"/>
+    <text x="${CX}" y="500" font-size="30" letter-spacing="14" fill="#8f6f3a">YOU'RE INVITED</text>
+    <text x="${CX}" y="648" font-size="112" fill="url(#names)">${esc(first)} <tspan fill="#8f6f3a" font-style="italic">&amp;</tspan> ${esc(second)}</text>
+    <text x="${CX}" y="712" font-size="34" font-style="italic" fill="#6d6582">are getting married</text>
+    <line x1="${CX - 130}" y1="754" x2="${CX + 130}" y2="754" stroke="#c9ad70" stroke-width="1.5" opacity="0.7"/>
     <text x="${CX}" y="838" font-size="38" letter-spacing="6" fill="#332c44">${esc(WEDDING.dateLabel.toUpperCase())}</text>
     <text x="${CX}" y="894" font-size="32" letter-spacing="5" fill="#6d6582">${esc(WEDDING.timeLabel)}</text>
     <text x="${CX}" y="964" font-size="38" letter-spacing="5" fill="#332c44">${esc(WEDDING.venueName.toUpperCase())}</text>
