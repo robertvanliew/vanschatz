@@ -10,6 +10,10 @@ import PetalField from "@/components/PetalField";
  * (PetalField) so they keep drifting as you scroll.
  */
 export default function FloralHero({ guestName }: { guestName?: string }) {
+  // "Saturday, October 17, 2026" → day + the rest, so mobile can stack them.
+  const [dayPart, ...dateRest] = WEDDING.dateLabel.split(", ");
+  const restOfDate = dateRest.join(", ");
+
   return (
     <section className="relative h-[100svh] w-full overflow-hidden">
       {/* Background wash, masked to dissolve into the shader toward the bottom */}
@@ -47,16 +51,22 @@ export default function FloralHero({ guestName }: { guestName?: string }) {
         />
 
         <p
-          className="rise-in mt-6 text-base tracking-[0.25em] text-ink-dim sm:text-lg"
+          className="rise-in mt-6 text-base leading-relaxed tracking-[0.25em] text-ink-dim sm:text-lg"
           style={{ "--delay": "1.1s" } as React.CSSProperties}
         >
-          {WEDDING.dateLabel.toUpperCase()}
+          {dayPart.toUpperCase()}
+          <span className="hidden sm:inline">, </span>
+          <br className="sm:hidden" />
+          {restOfDate.toUpperCase()}
         </p>
         <p
-          className="rise-in mt-2 text-sm tracking-[0.25em] text-gold"
+          className="rise-in mt-2 text-sm leading-relaxed tracking-[0.25em] text-gold"
           style={{ "--delay": "1.3s" } as React.CSSProperties}
         >
-          {`${WEDDING.venueName.toUpperCase()} · NEWBURGH, NY`}
+          {WEDDING.venueName.toUpperCase()}
+          <span className="hidden sm:inline"> · </span>
+          <br className="sm:hidden" />
+          NEWBURGH, NY
         </p>
 
         <div
