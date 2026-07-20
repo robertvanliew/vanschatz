@@ -68,17 +68,34 @@ async function executeSends(scheduleKey: string): Promise<number> {
       }
       throw e;
     }
+    let simulated: boolean;
     try {
-      const { simulated } = await sendMessage(p.channel, p.to, reminderBody(guest.name, guest.token));
-      if (!simulated) {
-        await db.reminderLog.update({ where: claimWhere, data: { simulated: false } });
-      }
-      sent++;
+      ({ simulated } = await sendMessage(p.channel, p.to, reminderBody(guest.name, guest.token)));
     } catch (e) {
-      // Release the claim so a future run can retry this guest/channel, and isolate the
-      // failure so it doesn't abort the rest of the batch.
-      await db.reminderLog.delete({ where: claimWhere });
+      // Send failed: release the claim so a future run can retry this guest/channel, and
+      // isolate the failure so it doesn't abort the rest of the batch.
       console.error(`Failed to send reminder to guest ${p.guestId} via ${p.channel}:`, e);
+      try {
+        await db.reminderLog.delete({ where: claimWhere });
+      } catch (cleanupError) {
+        console.error(
+          `Failed to release reminder claim for guest ${p.guestId} via ${p.channel}:`,
+          cleanupError
+        );
+      }
+      continue;
+    }
+    // The message went out; count it and keep the claim row no matter what happens below.
+    sent++;
+    if (!simulated) {
+      try {
+        await db.reminderLog.update({ where: claimWhere, data: { simulated: false } });
+      } catch (e) {
+        console.error(
+          `Failed to record real send for guest ${p.guestId} via ${p.channel}:`,
+          e
+        );
+      }
     }
   }
   return sent;
