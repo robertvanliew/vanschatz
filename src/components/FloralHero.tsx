@@ -55,8 +55,7 @@ export default function FloralHero({ guestName }: { guestName?: string }) {
           style={{ "--delay": "1.1s" } as React.CSSProperties}
         >
           {dayPart.toUpperCase()}
-          <span className="hidden sm:inline">, </span>
-          <br className="sm:hidden" />
+          <br />
           {restOfDate.toUpperCase()}
         </p>
         <p
@@ -64,8 +63,7 @@ export default function FloralHero({ guestName }: { guestName?: string }) {
           style={{ "--delay": "1.3s" } as React.CSSProperties}
         >
           {WEDDING.venueName.toUpperCase()}
-          <span className="hidden sm:inline"> · </span>
-          <br className="sm:hidden" />
+          <br />
           NEWBURGH, NY
         </p>
 
