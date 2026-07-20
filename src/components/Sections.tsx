@@ -20,20 +20,24 @@ export function Reveal({ children, className = "" }: { children: React.ReactNode
 export function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <h2 className="font-display mb-8 text-center text-4xl font-light italic sm:text-5xl">
-      <span className="aurora-text not-italic">✦</span> {children}
+      <span className="aurora-text not-italic">❀</span> {children}
     </h2>
   );
 }
+
+/** Shared light "watercolor card" surface. */
+export const cardClass =
+  "rounded-3xl border border-line bg-white/70 backdrop-blur-sm shadow-[0_16px_40px_-24px_rgba(107,79,150,0.35)]";
 
 export function WhenWhere() {
   return (
     <section className="mx-auto max-w-3xl px-6 py-24">
       <Reveal>
         <SectionHeading>When &amp; Where</SectionHeading>
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm">
+        <div className={`${cardClass} p-8 text-center`}>
           <p className="font-display text-2xl">{WEDDING.venueName}</p>
           <p className="mt-2 text-ink-dim">{WEDDING.venueAddress}</p>
-          <div className="my-6 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+          <div className="my-6 h-px bg-gradient-to-r from-transparent via-line to-transparent" />
           <p className="text-lg">{WEDDING.dateLabel}</p>
           <p className="mt-2 text-gold">{WEDDING.arrivalLabel}</p>
           <p className="mt-1 text-ink-dim">Celebration {WEDDING.timeLabel}</p>
@@ -41,18 +45,17 @@ export function WhenWhere() {
             href={mapsUrl()}
             target="_blank"
             rel="noreferrer"
-            className="mt-6 inline-block rounded-full border border-white/20 px-6 py-3 text-sm uppercase tracking-[0.2em] transition hover:bg-white/10"
+            className="mt-6 inline-block cursor-pointer rounded-full border border-[#c9b8e0] px-6 py-3 text-sm tracking-[0.2em] uppercase transition-colors duration-200 hover:bg-[#f0eaf7]"
           >
             Open in Maps
           </a>
         </div>
-        <div className="mt-6 overflow-hidden rounded-3xl border border-white/10">
+        <div className="mt-6 overflow-hidden rounded-3xl border border-line shadow-[0_16px_40px_-24px_rgba(107,79,150,0.35)]">
           <iframe
             src={mapsEmbedUrl()}
             className="h-64 w-full sm:h-80"
-            style={{ filter: "invert(90%) hue-rotate(180deg)" }}
             loading="lazy"
-            title="Map to Lakeview House"
+            title={`Map to ${WEDDING.venueName}`}
           />
         </div>
       </Reveal>
@@ -72,8 +75,8 @@ export function Details() {
             ["Celebration", "Ceremony and reception details coming soon."],
             ["RSVP", "Kindly respond using your personal link below."],
           ].map(([title, body]) => (
-            <div key={title} className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-              <h3 className="text-sm uppercase tracking-[0.25em] text-gold">{title}</h3>
+            <div key={title} className={`${cardClass} p-6`}>
+              <h3 className="text-sm tracking-[0.25em] text-gold uppercase">{title}</h3>
               <p className="mt-3 text-ink-dim">{body}</p>
             </div>
           ))}

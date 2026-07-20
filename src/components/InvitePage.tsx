@@ -1,4 +1,4 @@
-import CosmicHero from "@/components/CosmicHero";
+import FloralHero from "@/components/FloralHero";
 import Countdown from "@/components/Countdown";
 import { WhenWhere, Details, Registry, Reveal, SectionHeading } from "@/components/Sections";
 import RsvpCard from "@/components/RsvpCard";
@@ -19,7 +19,7 @@ export default function InvitePage({
 }) {
   return (
     <main>
-      <CosmicHero guestName={guest?.name} />
+      <FloralHero guestName={guest?.name} />
       <section className="px-6 py-24">
         <Reveal>
           <SectionHeading>Counting down</SectionHeading>

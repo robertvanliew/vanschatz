@@ -28,7 +28,7 @@ export default function RsvpCard({ guest }: { guest: InviteGuest }) {
   }
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+    <div className="rounded-3xl border border-line bg-white/70 p-8 shadow-[0_16px_40px_-24px_rgba(107,79,150,0.35)] backdrop-blur-sm">
       <AnimatePresence mode="wait">
         {done ? (
           <motion.div
@@ -43,14 +43,14 @@ export default function RsvpCard({ guest }: { guest: InviteGuest }) {
               transition={{ type: "spring", delay: 0.15 }}
               className="font-display aurora-text mx-auto text-6xl"
             >
-              ✦
+              ❀
             </motion.div>
             <p className="font-display mt-4 text-2xl italic">
               {attending ? "We can't wait to celebrate with you!" : "You'll be missed — thank you for letting us know."}
             </p>
             <button
               onClick={() => setDone(false)}
-              className="mt-6 text-sm uppercase tracking-[0.2em] text-ink-dim underline-offset-4 hover:underline"
+              className="mt-6 cursor-pointer text-sm tracking-[0.2em] text-ink-dim uppercase underline-offset-4 hover:underline"
             >
               Change response
             </button>
@@ -65,20 +65,20 @@ export default function RsvpCard({ guest }: { guest: InviteGuest }) {
             <div className="mt-6 grid gap-4">
               <button
                 onClick={() => setAttending(true)}
-                className={`min-h-14 rounded-2xl border px-6 py-4 text-lg transition ${
+                className={`min-h-14 cursor-pointer rounded-2xl border px-6 py-4 text-lg transition-colors duration-200 ${
                   attending === true
-                    ? "border-transparent bg-gradient-to-r from-[#7c6cf0] to-[#47c3ff] text-white"
-                    : "border-white/20 hover:bg-white/10"
+                    ? "border-transparent bg-gradient-to-r from-[#6b4f96] to-[#8a6db1] text-white"
+                    : "border-[#c9b8e0] hover:bg-[#f0eaf7]"
                 }`}
               >
-                Yes, I&apos;ll be there ✨
+                Yes, I&apos;ll be there ❀
               </button>
               <button
                 onClick={() => setAttending(false)}
-                className={`min-h-14 rounded-2xl border px-6 py-4 text-lg transition ${
+                className={`min-h-14 cursor-pointer rounded-2xl border px-6 py-4 text-lg transition-colors duration-200 ${
                   attending === false
-                    ? "border-transparent bg-white/20 text-white"
-                    : "border-white/20 hover:bg-white/10"
+                    ? "border-transparent bg-[#6d6582] text-white"
+                    : "border-[#c9b8e0] hover:bg-[#f0eaf7]"
                 }`}
               >
                 Sorry, can&apos;t make it
@@ -96,7 +96,7 @@ export default function RsvpCard({ guest }: { guest: InviteGuest }) {
                     <button
                       aria-label="Fewer people"
                       onClick={() => setPartySize((n) => Math.max(1, n - 1))}
-                      className="h-12 w-12 rounded-full border border-white/20 text-2xl hover:bg-white/10"
+                      className="h-12 w-12 cursor-pointer rounded-full border border-[#c9b8e0] text-2xl transition-colors duration-200 hover:bg-[#f0eaf7]"
                     >
                       −
                     </button>
@@ -109,7 +109,7 @@ export default function RsvpCard({ guest }: { guest: InviteGuest }) {
                     <button
                       aria-label="More people"
                       onClick={() => setPartySize((n) => Math.min(MAX_PARTY_SIZE, n + 1))}
-                      className="h-12 w-12 rounded-full border border-white/20 text-2xl hover:bg-white/10"
+                      className="h-12 w-12 cursor-pointer rounded-full border border-[#c9b8e0] text-2xl transition-colors duration-200 hover:bg-[#f0eaf7]"
                     >
                       +
                     </button>
@@ -121,12 +121,12 @@ export default function RsvpCard({ guest }: { guest: InviteGuest }) {
               <button
                 onClick={() => submit(attending)}
                 disabled={pending}
-                className="mt-8 min-h-14 w-full rounded-2xl bg-gradient-to-r from-[#7c6cf0] via-[#47c3ff] to-[#ff7ad9] px-6 py-4 text-lg font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+                className="mt-8 min-h-14 w-full cursor-pointer rounded-2xl bg-gradient-to-r from-[#6b4f96] via-[#8a6db1] to-[#b98cc0] px-6 py-4 text-lg font-medium text-white transition-opacity duration-200 hover:opacity-90 disabled:opacity-50"
               >
                 {pending ? "Sending…" : "Send RSVP"}
               </button>
             )}
-            {error && <p className="mt-4 text-center text-sm text-red-300">{error}</p>}
+            {error && <p className="mt-4 text-center text-sm text-red-700">{error}</p>}
           </motion.div>
         )}
       </AnimatePresence>

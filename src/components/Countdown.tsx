@@ -39,7 +39,7 @@ export default function Countdown() {
       {cells.map(([label, value]) => (
         <div
           key={label}
-          className="w-20 rounded-2xl border border-white/10 bg-white/5 py-4 backdrop-blur-sm sm:w-24"
+          className="w-20 rounded-2xl border border-line bg-white/70 py-4 shadow-[0_12px_30px_-20px_rgba(107,79,150,0.4)] backdrop-blur-sm sm:w-24"
         >
           <div className="font-display text-3xl sm:text-4xl">{value}</div>
           <div className="mt-1 text-[10px] uppercase tracking-[0.25em] text-ink-dim">{label}</div>
