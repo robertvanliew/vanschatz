@@ -15,8 +15,8 @@ A visually stunning, cosmic/celestial-themed ("Age of Aquarius") wedding invitat
 | Date | Saturday, October 17, 2026 |
 | Event time | 12:00 PM – 5:00 PM |
 | Guest arrival | 11:30 AM (displayed prominently) |
-| Venue | Lakeview House, Newburgh |
-| Street address | **[PLACEHOLDER — fill in]** |
+| Venue | Lakeview House |
+| Street address | 343 Lakeside Road, Orange Lake, Newburgh, NY 12550 |
 | Reception details | **[PLACEHOLDER — same venue assumed until specified]** |
 | Dress code | **[PLACEHOLDER — fill in]** |
 | RSVP deadline | **[PLACEHOLDER — fill in]** |
