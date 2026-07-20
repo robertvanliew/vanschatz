@@ -17,7 +17,8 @@ export function isPracticeMode(channel: Channel): boolean {
 export async function sendMessage(
   channel: Channel,
   to: string,
-  body: string
+  body: string,
+  subject = "A note from Julie & Robert"
 ): Promise<{ simulated: boolean }> {
   if (isPracticeMode(channel)) {
     console.log(`[practice ${channel}] to=${to}: ${body}`);
@@ -31,9 +32,9 @@ export async function sendMessage(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM ?? "Julie & Robert <onboarding@resend.dev>",
+        from: process.env.EMAIL_FROM ?? "Julie & Robert <rsvp@thevanschatz.com>",
         to: [to],
-        subject: "A reminder from Julie & Robert",
+        subject,
         html: `<p>${body}</p>`,
       }),
     });

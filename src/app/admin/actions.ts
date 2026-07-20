@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { makeToken } from "@/lib/tokens";
 import { validateRsvp } from "@/lib/rsvp";
 import { runManualReminders, runScheduledReminders } from "@/lib/reminders";
+import { sendInviteToGuest, sendAllInvites } from "@/lib/invites";
 
 function sessionValue(): string {
   return createHash("sha256").update(process.env.ADMIN_PASSWORD ?? "").digest("hex");
@@ -71,6 +72,18 @@ export async function setRsvpAction(formData: FormData): Promise<void> {
       respondedAt: new Date(),
     },
   });
+  revalidatePath("/admin");
+}
+
+export async function sendInviteAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await sendInviteToGuest(String(formData.get("id")));
+  revalidatePath("/admin");
+}
+
+export async function sendAllInvitesAction(): Promise<void> {
+  await requireAdmin();
+  await sendAllInvites();
   revalidatePath("/admin");
 }
 

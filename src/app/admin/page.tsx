@@ -8,6 +8,8 @@ import {
   addGuestAction,
   deleteGuestAction,
   setRsvpAction,
+  sendInviteAction,
+  sendAllInvitesAction,
   manualRemindersAction,
   scheduledRemindersAction,
 } from "@/app/admin/actions";
@@ -90,6 +92,14 @@ export default async function AdminDashboard() {
                   <td className="py-3 pr-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <CopyLinkButton url={`${base}/invite/${g.token}`} />
+                      {g.email && (
+                        <form action={sendInviteAction}>
+                          <input type="hidden" name="id" value={g.id} />
+                          <button className="rounded-lg cursor-pointer border border-line px-3 py-1.5 text-xs tracking-wider uppercase transition-colors duration-200 hover:bg-[#f0eaf7]">
+                            Email invite
+                          </button>
+                        </form>
+                      )}
                       <form action={setRsvpAction} className="flex items-center gap-1">
                         <input type="hidden" name="id" value={g.id} />
                         <select name="attending" defaultValue={g.rsvpStatus === "NO" ? "no" : "yes"} className="rounded-lg border border-line bg-white px-2 py-1.5 text-xs">
@@ -111,6 +121,19 @@ export default async function AdminDashboard() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="text-sm uppercase tracking-[0.25em] text-ink-dim">Invitations</h2>
+        <form action={sendAllInvitesAction} className="mt-4">
+          <button className="rounded-xl cursor-pointer bg-gradient-to-r from-[#6b4f96] to-[#8a6db1] px-6 py-3 font-medium text-white">
+            Email invites to everyone with an email
+          </button>
+        </form>
+        <p className="mt-2 text-xs text-ink-dim">
+          Sends each guest their personal invite link. Guests already invited are skipped, so it&apos;s
+          safe to click again after adding new people. Or use the per-guest &ldquo;Email invite&rdquo; button above.
+        </p>
       </section>
 
       <section className="mt-12">
