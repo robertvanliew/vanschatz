@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Guest {
+  id          String        @id @default(cuid())
+  token       String        @unique
+  name        String
+  email       String?
+  phone       String?
+  rsvpStatus  String        @default("PENDING") // PENDING | YES | NO
+  partySize   Int           @default(0)
+  respondedAt DateTime?
+  createdAt   DateTime      @default(now())
+  reminders   ReminderLog[]
+}
+
+model ReminderLog {
+  id          String   @id @default(cuid())
+  guestId     String
+  guest       Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  scheduleKey String   // "1month" | "1week" | "3days" | "manual-<iso>"
+  channel     String   // "email" | "sms"
+  simulated   Boolean  @default(true)
+  sentAt      DateTime @default(now())
+
+  @@unique([guestId, scheduleKey, channel])
+}
