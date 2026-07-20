@@ -32,9 +32,17 @@ export default function ShaderBackground() {
   if (!mounted) return null;
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 opacity-70">
+    // Opaque gradient in the shader's own colours guarantees full coverage on
+    // every viewport (tall phones included) — the animated plane can't leave a
+    // pale gap because whatever it doesn't reach just shows this matching wash.
+    // The softening opacity lives on the canvas, not this base layer.
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 -z-10"
+      style={{ background: "linear-gradient(165deg, #ebedff 0%, #f3f2f8 45%, #e6f5fb 72%, #dbf8ff 100%)" }}
+    >
       <ShaderGradientCanvas
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", height: "100%", opacity: 0.72 }}
         pointerEvents="none"
         pixelDensity={1}
         fov={45}
