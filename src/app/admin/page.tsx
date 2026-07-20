@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { WEDDING } from "@/lib/wedding";
 import { computeTallies } from "@/lib/rsvp";
 import { isPracticeMode } from "@/lib/messaging";
 import {
@@ -157,6 +158,16 @@ export default async function AdminDashboard() {
                             Email invite
                           </ConfirmButton>
                         </form>
+                      )}
+                      {g.phone && (
+                        <a
+                          href={`sms:${g.phone}?&body=${encodeURIComponent(
+                            `Hi ${g.name}! Julie & Robert are getting married on ${WEDDING.dateLabel} — you're invited. RSVP here: ${base}/invite/${g.token}`
+                          )}`}
+                          className={`inline-block ${ghostBtn}`}
+                        >
+                          Text invite
+                        </a>
                       )}
                       <form action={setRsvpAction} className="flex items-center gap-1">
                         <input type="hidden" name="id" value={g.id} />
