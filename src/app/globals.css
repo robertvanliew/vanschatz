@@ -72,14 +72,16 @@ body {
   mask-image: linear-gradient(to bottom, #000 52%, transparent 100%);
 }
 
-/* Soft watercolor wash background for the hero */
+/* Soft watercolor wash for the hero — only translucent pastel tints, no opaque
+   base, so the same fixed shader background shows through the top exactly as it
+   does lower down. This keeps the whole page one continuous surface (no seam
+   between the cream hero and the lavender shader when scrolling). */
 .watercolor-wash {
   background:
     radial-gradient(ellipse 70% 50% at 15% 10%, rgba(195, 168, 224, 0.28), transparent 70%),
     radial-gradient(ellipse 55% 45% at 88% 8%, rgba(229, 191, 210, 0.3), transparent 70%),
     radial-gradient(ellipse 45% 40% at 75% 85%, rgba(125, 147, 112, 0.14), transparent 70%),
-    radial-gradient(ellipse 60% 45% at 10% 90%, rgba(195, 168, 224, 0.16), transparent 70%),
-    linear-gradient(180deg, #fbf9f6, var(--bg));
+    radial-gradient(ellipse 60% 45% at 10% 90%, rgba(195, 168, 224, 0.16), transparent 70%);
 }
 
 /* Subtle paper grain overlay */
