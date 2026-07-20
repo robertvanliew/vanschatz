@@ -18,7 +18,8 @@ export async function sendMessage(
   channel: Channel,
   to: string,
   body: string,
-  subject = "A note from Julie & Robert"
+  subject = "A note from Julie & Robert",
+  html?: string
 ): Promise<{ simulated: boolean }> {
   if (isPracticeMode(channel)) {
     console.log(`[practice ${channel}] to=${to}: ${body}`);
@@ -35,7 +36,8 @@ export async function sendMessage(
         from: process.env.EMAIL_FROM ?? "Julie & Robert <rsvp@thevanschatz.com>",
         to: [to],
         subject,
-        html: `<p>${body}</p>`,
+        text: body, // plain-text fallback
+        html: html ?? `<p>${body}</p>`,
       }),
     });
     if (!res.ok) throw new Error(`Resend failed: ${res.status}`);
