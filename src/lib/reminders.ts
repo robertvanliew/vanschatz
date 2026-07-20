@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { daysUntil, WEDDING } from "@/lib/wedding";
 import { db } from "@/lib/db";
 import { sendMessage, type Channel } from "@/lib/messaging";
@@ -51,11 +52,34 @@ async function executeSends(scheduleKey: string): Promise<number> {
   let sent = 0;
   for (const p of planned) {
     const guest = byId.get(p.guestId)!;
-    const { simulated } = await sendMessage(p.channel, p.to, reminderBody(guest.name, guest.token));
-    await db.reminderLog.create({
-      data: { guestId: p.guestId, scheduleKey, channel: p.channel, simulated },
-    });
-    sent++;
+    const claimWhere = {
+      guestId_scheduleKey_channel: { guestId: p.guestId, scheduleKey, channel: p.channel },
+    };
+    try {
+      // Claim first: reserve the (guest, scheduleKey, channel) slot before sending so
+      // overlapping runs can't both send to the same guest/channel.
+      await db.reminderLog.create({
+        data: { guestId: p.guestId, scheduleKey, channel: p.channel, simulated: true },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        // Another run already claimed this send; skip it silently.
+        continue;
+      }
+      throw e;
+    }
+    try {
+      const { simulated } = await sendMessage(p.channel, p.to, reminderBody(guest.name, guest.token));
+      if (!simulated) {
+        await db.reminderLog.update({ where: claimWhere, data: { simulated: false } });
+      }
+      sent++;
+    } catch (e) {
+      // Release the claim so a future run can retry this guest/channel, and isolate the
+      // failure so it doesn't abort the rest of the batch.
+      await db.reminderLog.delete({ where: claimWhere });
+      console.error(`Failed to send reminder to guest ${p.guestId} via ${p.channel}:`, e);
+    }
   }
   return sent;
 }
