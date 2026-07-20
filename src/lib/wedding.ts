@@ -7,6 +7,13 @@ export const WEDDING = {
   venueName: "Lakeview House",
   venueStreet: "343 Lakeside Road",
   venueAddress: "343 Lakeside Road, Orange Lake, Newburgh, NY 12550",
+  // Private after-party details — kept OFF the public site (shown blurred there)
+  // and included only on the emailed invitation to invited guests.
+  afterParty: {
+    host: "Barb & John's",
+    address: "753 River Rd, Newburgh, NY 12550",
+    phone: "(917) 656-5572",
+  },
   date: new Date(2026, 9, 17, 11, 30),
 } as const;
 

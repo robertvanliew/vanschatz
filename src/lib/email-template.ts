@@ -4,6 +4,8 @@
  * button. Used by both invites and reminders.
  */
 
+import { WEDDING } from "@/lib/wedding";
+
 function baseUrl(): string {
   return process.env.NEXT_PUBLIC_BASE_URL ?? "https://thevanschatz.com";
 }
@@ -35,9 +37,14 @@ export function weddingEmailHtml({
           <div style="font-size:16px;color:#332c44;">Hi ${esc(name)},</div>
           <p style="font-size:16px;line-height:1.6;color:#6d6582;margin:12px 0 0;">${esc(intro)}</p>
         </td></tr>
-        <tr><td style="padding:24px 40px 46px;text-align:center;">
+        <tr><td style="padding:24px 40px 20px;text-align:center;">
           <a href="${url}" style="display:inline-block;background:#6b4f96;color:#ffffff;text-decoration:none;font-size:16px;padding:14px 44px;border-radius:999px;">RSVP here</a>
           <p style="font-size:13px;color:#9a93aa;line-height:1.6;margin-top:20px;">Let us know if you can make it, and how many adults &amp; children.<br/>Or scan the flyer above, or open: <a href="${url}" style="color:#8a6db1;">${url}</a></p>
+        </td></tr>
+        <tr><td style="padding:0 40px 44px;text-align:center;">
+          <div style="height:1px;width:100px;background:#e4dccd;margin:0 auto 18px;"></div>
+          <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8f6f3a;">After the Reception</div>
+          <p style="font-size:14px;line-height:1.6;color:#6d6582;margin:10px 0 0;">You&rsquo;re warmly welcome to keep the celebration going at ${esc(WEDDING.afterParty.host)} &mdash; ${esc(WEDDING.afterParty.address)} &middot; ${esc(WEDDING.afterParty.phone)}.</p>
         </td></tr>
       </table>
       <div style="font-family:Georgia,serif;font-style:italic;color:#9a93aa;font-size:14px;margin-top:20px;">With love, Julie &amp; Robert</div>

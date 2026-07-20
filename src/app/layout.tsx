@@ -12,9 +12,24 @@ const serif = Cormorant_Garamond({
 const sans = Jost({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://thevanschatz.com"),
   title: "Julie & Robert — October 17, 2026",
   description:
     "Join Julie & Robert beneath the wisteria. Saturday, October 17, 2026 · Lakeview House, Newburgh, NY.",
+  openGraph: {
+    title: "Julie & Robert are getting married",
+    description: "Saturday, October 17, 2026 · Lakeview House, Newburgh, NY — tap to RSVP.",
+    url: "https://thevanschatz.com",
+    siteName: "Julie & Robert",
+    type: "website",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Julie & Robert — You're Invited" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Julie & Robert are getting married",
+    description: "Saturday, October 17, 2026 · Lakeview House, Newburgh, NY — tap to RSVP.",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
