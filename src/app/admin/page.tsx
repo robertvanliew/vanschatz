@@ -54,7 +54,8 @@ export default async function AdminDashboard() {
   const h = await headers();
   const base =
     process.env.NEXT_PUBLIC_BASE_URL ?? `http://${h.get("host") ?? "localhost:3000"}`;
-  const practice = isPracticeMode("email") || isPracticeMode("sms");
+  const emailLive = !isPracticeMode("email");
+  const smsLive = !isPracticeMode("sms");
 
   const statCard = (label: string, value: number) => (
     <div key={label} className={`${card} p-6 text-center`}>
@@ -67,16 +68,26 @@ export default async function AdminDashboard() {
     <main className="mx-auto max-w-5xl px-6 py-14">
       <header className="flex flex-wrap items-center gap-3">
         <h1 className="font-display text-5xl italic text-ink">Wedding HQ</h1>
-        {practice && (
+        {emailLive ? (
+          <span className="rounded-full border border-[#bcd0ac] bg-[#eef4e7] px-3 py-1 text-xs tracking-wider text-[#5f7554] uppercase">
+            Email sending live
+          </span>
+        ) : (
           <span className="rounded-full border border-gold/50 bg-[#faf4e6] px-3 py-1 text-xs tracking-wider text-gold uppercase">
             Practice mode
           </span>
         )}
       </header>
-      {practice && (
+      {!emailLive && (
         <p className="mt-2 max-w-2xl text-sm text-ink-dim">
           Emails are simulated (nothing is actually sent) until <code className="text-gold">RESEND_API_KEY</code> is
           set in the environment.
+        </p>
+      )}
+      {emailLive && !smsLive && (
+        <p className="mt-2 max-w-2xl text-sm text-ink-dim">
+          Email invites &amp; reminders send for real. (Text/SMS isn&apos;t configured — you&apos;re using email, so
+          that&apos;s fine.)
         </p>
       )}
 
