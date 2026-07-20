@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function submitRsvp(
   token: string,
-  input: { attending: boolean; partySize: number }
+  input: { attending: boolean; adults: number; children: number }
 ): Promise<{ ok: boolean; error?: string }> {
   const result = validateRsvp(input);
   if (!result.ok) return { ok: false, error: result.error };
@@ -18,6 +18,8 @@ export async function submitRsvp(
     where: { token },
     data: {
       rsvpStatus: result.status,
+      adults: result.adults,
+      children: result.children,
       partySize: result.partySize,
       respondedAt: new Date(),
     },

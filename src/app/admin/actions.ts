@@ -57,12 +57,19 @@ export async function setRsvpAction(formData: FormData): Promise<void> {
   await requireAdmin();
   const id = String(formData.get("id"));
   const attending = formData.get("attending") === "yes";
-  const partySize = Number(formData.get("partySize") ?? 1);
-  const result = validateRsvp({ attending, partySize });
+  const adults = Number(formData.get("adults") ?? 1);
+  const children = Number(formData.get("children") ?? 0);
+  const result = validateRsvp({ attending, adults, children });
   if (!result.ok) return;
   await db.guest.update({
     where: { id },
-    data: { rsvpStatus: result.status, partySize: result.partySize, respondedAt: new Date() },
+    data: {
+      rsvpStatus: result.status,
+      adults: result.adults,
+      children: result.children,
+      partySize: result.partySize,
+      respondedAt: new Date(),
+    },
   });
   revalidatePath("/admin");
 }

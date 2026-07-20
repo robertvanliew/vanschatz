@@ -81,7 +81,11 @@ export default async function AdminDashboard() {
                   <td className="py-3 pr-4">
                     {g.rsvpStatus === "YES" ? "✅ Yes" : g.rsvpStatus === "NO" ? "❌ No" : "⏳ Pending"}
                   </td>
-                  <td className="py-3 pr-4">{g.rsvpStatus === "YES" ? g.partySize : "—"}</td>
+                  <td className="py-3 pr-4">
+                    {g.rsvpStatus === "YES"
+                      ? `${g.partySize} (${g.adults}a${g.children ? ` + ${g.children}c` : ""})`
+                      : "—"}
+                  </td>
                   <td className="py-3 pr-4 text-ink-dim">{[g.email, g.phone].filter(Boolean).join(" · ") || "—"}</td>
                   <td className="py-3 pr-4">
                     <div className="flex flex-wrap items-center gap-2">
@@ -92,7 +96,8 @@ export default async function AdminDashboard() {
                           <option value="yes">Yes</option>
                           <option value="no">No</option>
                         </select>
-                        <input name="partySize" type="number" min={1} max={10} defaultValue={Math.max(1, g.partySize)} className="w-14 rounded-lg border border-line bg-white px-2 py-1.5 text-xs" />
+                        <input name="adults" type="number" min={1} max={10} defaultValue={Math.max(1, g.adults)} title="Adults" aria-label="Adults" className="w-12 rounded-lg border border-line bg-white px-2 py-1.5 text-xs" />
+                        <input name="children" type="number" min={0} max={10} defaultValue={Math.max(0, g.children)} title="Children" aria-label="Children" className="w-12 rounded-lg border border-line bg-white px-2 py-1.5 text-xs" />
                         <button className="rounded-lg cursor-pointer border border-line px-3 py-1.5 text-xs uppercase tracking-wider transition-colors duration-200 hover:bg-[#f0eaf7]">Set</button>
                       </form>
                       <form action={deleteGuestAction}>

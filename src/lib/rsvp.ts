@@ -1,18 +1,25 @@
-export type RsvpInput = { attending: boolean; partySize: number };
+export type RsvpInput = { attending: boolean; adults: number; children: number };
 
 export type RsvpResult =
-  | { ok: true; status: "YES" | "NO"; partySize: number }
+  | { ok: true; status: "YES" | "NO"; adults: number; children: number; partySize: number }
   | { ok: false; error: string };
 
 export const MAX_PARTY_SIZE = 10;
 
 export function validateRsvp(input: RsvpInput): RsvpResult {
-  if (!input.attending) return { ok: true, status: "NO", partySize: 0 };
-  const n = input.partySize;
-  if (!Number.isInteger(n) || n < 1 || n > MAX_PARTY_SIZE) {
-    return { ok: false, error: `Party size must be between 1 and ${MAX_PARTY_SIZE}.` };
+  if (!input.attending) return { ok: true, status: "NO", adults: 0, children: 0, partySize: 0 };
+  const { adults, children } = input;
+  if (!Number.isInteger(adults) || !Number.isInteger(children) || adults < 1 || children < 0) {
+    return { ok: false, error: "Please include at least one adult." };
   }
-  return { ok: true, status: "YES", partySize: n };
+  const partySize = adults + children;
+  if (partySize > MAX_PARTY_SIZE) {
+    return {
+      ok: false,
+      error: `Parties of more than ${MAX_PARTY_SIZE} — please reach out to Julie & Rob directly.`,
+    };
+  }
+  return { ok: true, status: "YES", adults, children, partySize };
 }
 
 export type GuestLike = { rsvpStatus: string; partySize: number };

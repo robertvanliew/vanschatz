@@ -46,3 +46,8 @@ dev.db-journal
 
 # original photo drop (duplicated into public/photos)
 /Photo of Julie & Robert/
+
+# local dev server logs
+/devrun.*.log
+/dev.out.log
+/dev.err.log

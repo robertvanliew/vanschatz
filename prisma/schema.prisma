@@ -14,7 +14,9 @@ model Guest {
   email       String?
   phone       String?
   rsvpStatus  String        @default("PENDING") // PENDING | YES | NO
-  partySize   Int           @default(0)
+  partySize   Int           @default(0) // total headcount = adults + children
+  adults      Int           @default(0)
+  children    Int           @default(0)
   respondedAt DateTime?
   createdAt   DateTime      @default(now())
   reminders   ReminderLog[]

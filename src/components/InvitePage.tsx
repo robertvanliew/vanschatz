@@ -10,6 +10,8 @@ export type InviteGuest = {
   token: string;
   rsvpStatus: string;
   partySize: number;
+  adults: number;
+  children: number;
 };
 
 export default function InvitePage({

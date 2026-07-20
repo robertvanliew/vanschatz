@@ -6,21 +6,62 @@ import { submitRsvp } from "@/app/actions/rsvp";
 import { MAX_PARTY_SIZE } from "@/lib/rsvp";
 import type { InviteGuest } from "@/components/InvitePage";
 
+function Stepper({
+  label,
+  value,
+  onDec,
+  onInc,
+}: {
+  label: string;
+  value: number;
+  onDec: () => void;
+  onInc: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-sm tracking-[0.2em] text-ink-dim uppercase">{label}</span>
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          aria-label={`Fewer ${label.toLowerCase()}`}
+          onClick={onDec}
+          className="h-11 w-11 cursor-pointer rounded-full border border-[#c9b8e0] text-2xl transition-colors duration-200 hover:bg-[#f0eaf7]"
+        >
+          −
+        </button>
+        <span className="font-display w-8 text-center text-3xl tabular-nums">{value}</span>
+        <button
+          type="button"
+          aria-label={`More ${label.toLowerCase()}`}
+          onClick={onInc}
+          className="h-11 w-11 cursor-pointer rounded-full border border-[#c9b8e0] text-2xl transition-colors duration-200 hover:bg-[#f0eaf7]"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function RsvpCard({ guest }: { guest: InviteGuest }) {
   const [attending, setAttending] = useState<boolean | null>(
     guest.rsvpStatus === "YES" ? true : guest.rsvpStatus === "NO" ? false : null
   );
-  const [partySize, setPartySize] = useState(Math.max(1, guest.partySize));
+  const [adults, setAdults] = useState(Math.max(1, guest.adults));
+  const [children, setChildren] = useState(Math.max(0, guest.children));
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const total = adults + children;
 
   function submit(nextAttending: boolean) {
     setError(null);
     startTransition(async () => {
       const res = await submitRsvp(guest.token, {
         attending: nextAttending,
-        partySize: nextAttending ? partySize : 0,
+        adults: nextAttending ? adults : 0,
+        children: nextAttending ? children : 0,
       });
       if (res.ok) setDone(true);
       else setError(res.error ?? "Something went wrong — please try again.");
@@ -92,27 +133,23 @@ export default function RsvpCard({ guest }: { guest: InviteGuest }) {
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-6 flex items-center justify-center gap-6">
-                    <button
-                      aria-label="Fewer people"
-                      onClick={() => setPartySize((n) => Math.max(1, n - 1))}
-                      className="h-12 w-12 cursor-pointer rounded-full border border-[#c9b8e0] text-2xl transition-colors duration-200 hover:bg-[#f0eaf7]"
-                    >
-                      −
-                    </button>
-                    <div className="text-center">
-                      <div className="font-display text-4xl">{partySize}</div>
-                      <div className="text-[10px] uppercase tracking-[0.25em] text-ink-dim">
-                        {partySize === 1 ? "guest" : "guests"} total
-                      </div>
-                    </div>
-                    <button
-                      aria-label="More people"
-                      onClick={() => setPartySize((n) => Math.min(MAX_PARTY_SIZE, n + 1))}
-                      className="h-12 w-12 cursor-pointer rounded-full border border-[#c9b8e0] text-2xl transition-colors duration-200 hover:bg-[#f0eaf7]"
-                    >
-                      +
-                    </button>
+                  <div className="mt-6 space-y-4 rounded-2xl border border-line/70 p-5">
+                    <p className="text-center text-sm text-ink-dim">How many will be in your party?</p>
+                    <Stepper
+                      label="Adults"
+                      value={adults}
+                      onDec={() => setAdults((n) => Math.max(1, n - 1))}
+                      onInc={() => total < MAX_PARTY_SIZE && setAdults((n) => n + 1)}
+                    />
+                    <Stepper
+                      label="Children"
+                      value={children}
+                      onDec={() => setChildren((n) => Math.max(0, n - 1))}
+                      onInc={() => total < MAX_PARTY_SIZE && setChildren((n) => n + 1)}
+                    />
+                    <p className="text-center text-[10px] tracking-[0.25em] text-ink-dim uppercase">
+                      {total} {total === 1 ? "guest" : "guests"} total
+                    </p>
                   </div>
                 </motion.div>
               )}

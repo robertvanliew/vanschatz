@@ -18,6 +18,8 @@ export default async function GuestInvite({
         token: guest.token,
         rsvpStatus: guest.rsvpStatus,
         partySize: guest.partySize,
+        adults: guest.adults,
+        children: guest.children,
       }}
     />
   );
