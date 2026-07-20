@@ -64,6 +64,8 @@ export default function FloralHero({ guestName }: { guestName?: string }) {
         >
           {WEDDING.venueName.toUpperCase()}
           <br />
+          {WEDDING.venueStreet.toUpperCase()}
+          <br />
           NEWBURGH, NY
         </p>
 

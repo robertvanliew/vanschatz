@@ -5,6 +5,7 @@ export const WEDDING = {
   timeLabel: "11:30 AM – 5:00 PM",
   scheduleLabel: "Ceremony at noon, reception to follow",
   venueName: "Lakeview House",
+  venueStreet: "343 Lakeside Road",
   venueAddress: "343 Lakeside Road, Orange Lake, Newburgh, NY 12550",
   date: new Date(2026, 9, 17, 11, 30),
 } as const;
