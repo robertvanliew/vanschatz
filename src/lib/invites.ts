@@ -8,9 +8,9 @@ const INVITE_KEY = "invite";
 const INVITE_SUBJECT = "You're invited — Julie & Robert's wedding";
 
 function baseUrl(): string {
-  // Must be set in production (e.g. https://thevanschatz.com) so email links
-  // don't point at localhost.
-  return process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  // Prefer an explicit env override; otherwise the production domain so email
+  // links never point at localhost.
+  return process.env.NEXT_PUBLIC_BASE_URL ?? "https://thevanschatz.com";
 }
 
 /** If a poster image exists in /public, return its public URL (else null). */
