@@ -4,6 +4,7 @@ import Countdown from "@/components/Countdown";
 import ShaderBackground from "@/components/ShaderBackground";
 import { WhenWhere, Details, Registry, Reveal, SectionHeading } from "@/components/Sections";
 import RsvpCard from "@/components/RsvpCard";
+import EmailRsvpForm from "@/components/EmailRsvpForm";
 
 export type InviteGuest = {
   name: string;
@@ -68,16 +69,7 @@ export default function InvitePage({
                 : "Please use the personal link from your invitation text or email to RSVP."}
             </p>
           )}
-          <p className="mt-6 text-center text-sm text-ink-dim">
-            Prefer to reply by email? Write to us at{" "}
-            <a
-              href="mailto:rsvp@thevanschatz.com"
-              className="text-gold underline-offset-4 hover:underline"
-            >
-              rsvp@thevanschatz.com
-            </a>{" "}
-            — just let us know yes (with how many adults &amp; children) or no.
-          </p>
+          <EmailRsvpForm />
         </Reveal>
       </section>
       <Registry />

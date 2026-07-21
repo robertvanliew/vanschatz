@@ -38,3 +38,8 @@ export function mapsUrl(): string {
 export function mapsEmbedUrl(): string {
   return `https://www.google.com/maps?q=${encodedAddress}&output=embed`;
 }
+
+/** Turn-by-turn directions — opens the Google Maps app on phones. */
+export function mapsDirUrl(): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
+}
