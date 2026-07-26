@@ -24,7 +24,7 @@ export async function renderFlyer(qrTarget: string): Promise<Buffer> {
     errorCorrectionLevel: "M",
   });
   return sharp(baseBuffer)
-    .composite([{ input: qr, left: 445, top: 1115 }])
+    .composite([{ input: qr, left: 445, top: 1128 }])
     .jpeg({ quality: 90, mozjpeg: true })
     .toBuffer();
 }
