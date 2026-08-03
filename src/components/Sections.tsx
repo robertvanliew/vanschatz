@@ -113,20 +113,6 @@ export function Details() {
               <p className="mt-3 text-ink-dim">{body}</p>
             </div>
           ))}
-          <div className={`${cardClass} p-6 transition duration-300 hover:-translate-y-1`}>
-            <h3 className="text-sm tracking-[0.25em] text-gold uppercase">After the Reception</h3>
-            <p className="mt-3 text-ink-dim">
-              You&apos;re warmly welcome to keep the celebration going at Barb &amp; John&apos;s.
-            </p>
-            {/* Decorative blurred placeholder only — the real address/phone are
-                intentionally not in the page. They're shared on the invitation. */}
-            <p className="mt-3 select-none blur-[5px] text-ink-dim" aria-hidden="true">
-              000 Riverbend Road, Newburgh, NY 12550 · (000) 000-0000
-            </p>
-            <p className="mt-2 text-sm tracking-wide text-gold">
-              The address will be provided on your invitation.
-            </p>
-          </div>
         </div>
       </Reveal>
     </section>
