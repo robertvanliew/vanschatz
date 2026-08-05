@@ -130,11 +130,18 @@ export default async function AdminDashboard() {
                   </td>
                 </tr>
               )}
-              {guests.map((g) => (
+              {guests.map((g) => {
+                const invitedSize =
+                  1 + (g.party ? g.party.split(",").map((s) => s.trim()).filter(Boolean).length : 0);
+                return (
                 <tr key={g.id} className="border-b border-line/70 last:border-0">
                   <td className="py-4 pr-4">
                     <div className="font-medium">{g.name}</div>
-                    {g.party && <div className="mt-0.5 text-xs text-ink-dim">bringing: {g.party}</div>}
+                    {g.party && (
+                      <div className="mt-0.5 text-xs text-ink-dim">
+                        bringing: {g.party} · party of {invitedSize}
+                      </div>
+                    )}
                   </td>
                   <td className="py-4 pr-4">
                     <StatusBadge status={g.rsvpStatus} />
@@ -182,7 +189,7 @@ export default async function AdminDashboard() {
                           <option value="yes">Yes</option>
                           <option value="no">No</option>
                         </select>
-                        <input name="adults" type="number" min={1} max={10} defaultValue={Math.max(1, g.adults)} title="Adults" aria-label="Adults" className="w-12 rounded-lg border border-line bg-white px-2 py-1.5 text-xs" />
+                        <input name="adults" type="number" min={1} max={10} defaultValue={g.adults > 0 ? g.adults : invitedSize} title="Adults" aria-label="Adults" className="w-12 rounded-lg border border-line bg-white px-2 py-1.5 text-xs" />
                         <input name="children" type="number" min={0} max={10} defaultValue={Math.max(0, g.children)} title="Children" aria-label="Children" className="w-12 rounded-lg border border-line bg-white px-2 py-1.5 text-xs" />
                         <button className={ghostBtn}>Set</button>
                       </form>
@@ -200,7 +207,8 @@ export default async function AdminDashboard() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
