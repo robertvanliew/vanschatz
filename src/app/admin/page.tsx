@@ -52,6 +52,15 @@ export default async function AdminDashboard() {
   });
   const tallies = computeTallies(guests);
 
+  // People (not households): count each guest's whole party. Use the confirmed
+  // partySize once they respond, otherwise the invited party size.
+  const partyCount = (p: string | null) =>
+    p ? p.split(",").map((x) => x.trim()).filter(Boolean).length : 0;
+  const invitedPeople = guests.reduce(
+    (sum, g) => sum + Math.max(1 + partyCount(g.party), g.partySize),
+    0
+  );
+
   const h = await headers();
   const base =
     process.env.NEXT_PUBLIC_BASE_URL ?? `http://${h.get("host") ?? "localhost:3000"}`;
@@ -93,10 +102,10 @@ export default async function AdminDashboard() {
       )}
 
       <section className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {statCard("Attending", tallies.attending)}
+        {statCard("Invited (people)", invitedPeople)}
+        {statCard("Coming (people)", tallies.headcount)}
         {statCard("Declined", tallies.declined)}
-        {statCard("No response", tallies.pending)}
-        {statCard("Headcount", tallies.headcount)}
+        {statCard("No reply", tallies.pending)}
       </section>
 
       <section className={`${card} mt-8 p-7`}>
