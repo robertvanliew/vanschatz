@@ -13,6 +13,7 @@ model Guest {
   name        String
   email       String?
   phone       String?
+  party       String?       // who they're invited to bring (names)
   rsvpStatus  String        @default("PENDING") // PENDING | YES | NO
   partySize   Int           @default(0) // total headcount = adults + children
   adults      Int           @default(0)

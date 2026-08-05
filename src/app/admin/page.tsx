@@ -132,7 +132,10 @@ export default async function AdminDashboard() {
               )}
               {guests.map((g) => (
                 <tr key={g.id} className="border-b border-line/70 last:border-0">
-                  <td className="py-4 pr-4 font-medium">{g.name}</td>
+                  <td className="py-4 pr-4">
+                    <div className="font-medium">{g.name}</div>
+                    {g.party && <div className="mt-0.5 text-xs text-ink-dim">bringing: {g.party}</div>}
+                  </td>
                   <td className="py-4 pr-4">
                     <StatusBadge status={g.rsvpStatus} />
                   </td>
