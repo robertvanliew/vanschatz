@@ -37,14 +37,14 @@ export default function InvitePage({
         </Reveal>
       </section>
 
-      {/* A single photo of Julie & Robert on the swing, beneath the countdown */}
+      {/* A single photo of Julie & Robert, beneath the countdown */}
       <section className="mx-auto max-w-2xl px-6 pb-24">
         <Reveal>
           <div className="overflow-hidden rounded-3xl border border-line bg-white/60 shadow-[0_30px_70px_-30px_rgba(107,79,150,0.55)]">
             <div className="relative aspect-[4/5] w-full">
               <Image
-                src="/photos/01.jpeg"
-                alt="Julie and Robert on the swing"
+                src="/photos/03.jpeg"
+                alt="Julie and Robert cuddled up together"
                 fill
                 sizes="(max-width: 768px) 92vw, 42rem"
                 className="object-cover object-top"
