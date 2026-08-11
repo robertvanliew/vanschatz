@@ -9,7 +9,8 @@ import { FLYER_BASE_B64 } from "@/lib/flyer-base";
  * At request time we only composite each guest's QR (which needs no font) onto
  * the empty card slot, so the flyer always renders fully, everywhere.
  *
- * Regenerate the base with `node _genbase.mjs` after any flyer design change.
+ * Regenerate the base with `node scripts/regen-flyer-base.mjs` after any flyer
+ * design change.
  */
 
 const baseBuffer = Buffer.from(FLYER_BASE_B64, "base64");
@@ -24,7 +25,7 @@ export async function renderFlyer(qrTarget: string): Promise<Buffer> {
     errorCorrectionLevel: "M",
   });
   return sharp(baseBuffer)
-    .composite([{ input: qr, left: 445, top: 1130 }])
+    .composite([{ input: qr, left: 445, top: 1202 }])
     .jpeg({ quality: 90, mozjpeg: true })
     .toBuffer();
 }
