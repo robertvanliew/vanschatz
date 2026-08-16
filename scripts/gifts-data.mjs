@@ -40,11 +40,15 @@ export const GIFTS = [
     url: "https://www.westelm.com/products/straight-sided-stoneware-dinnerware-set-of-20-e3510/?sku=3181290",
   },
   {
+    // Originally a The Knot registry-store link. Moved to the equivalent Amazon
+    // listing so guests reach an ordinary shop rather than another registry —
+    // and so the product photo can be fetched.
     slug: "white-wine-glasses",
-    title: "White Wine Glasses",
-    note: "16 oz, set of four",
-    retailer: "The Knot",
-    url: "https://www.theknot.com/registry/store/products/16-oz-white-wine-glasses-set-of-4?id=291269",
+    title: "Mikasa Cheers White Wine Glasses",
+    note: "Set of four, 16 oz",
+    retailer: "Amazon",
+    url: "https://www.amazon.com/dp/B0009P5Z24",
+    source: { kind: "amazon", asin: "B0009P5Z24" },
   },
   {
     slug: "mccook-knife-block-set",
@@ -95,11 +99,14 @@ export const GIFTS = [
     source: { kind: "bestbuy", sku: "6359269" },
   },
   {
+    // Also moved off The Knot. This one carries a strainer insert, which suits
+    // the "for pasta" note better than the original did.
     slug: "classic-stockpot",
-    title: "Classic Stockpot with Lid",
-    note: "8 qt — for pasta",
-    retailer: "The Knot",
-    url: "https://www.theknot.com/registry/store/products/classic-8-qt-stockpot-with-lid-631899707550?id=151817",
+    title: "Made In 8 qt Stock Pot with Pasta Insert",
+    note: "5-ply stainless clad, with lid",
+    retailer: "Amazon",
+    url: "https://www.amazon.com/dp/B0CF2NBX28",
+    source: { kind: "amazon", asin: "B0CF2NBX28" },
   },
   {
     slug: "folding-patio-dining-set",

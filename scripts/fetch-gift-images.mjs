@@ -38,7 +38,14 @@ function getHtml(url) {
 const IPHONE_UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
 
-/** Is this URL a real product shot rather than a video thumbnail or an asset? */
+/**
+ * Is this URL a real product shot rather than a video thumbnail or an asset?
+ *
+ * This filter is not clever enough to spot a marketing infographic — Amazon
+ * gallery entries include "100% Full-Clad Construction"-style comparison charts,
+ * and one candidate listing led with exactly that. Always look at what this
+ * script downloads before committing it.
+ */
 const usableAmazonImage = (u) =>
   !u.includes("play-button") && !u.includes("overlay") && !/\.(css|js)/.test(u);
 
@@ -70,17 +77,19 @@ async function amazonMobileImage(asin) {
 async function imageUrlFor(gift) {
   switch (gift.source?.kind) {
     case "amazon": {
-      // Legacy catalogue path built from the ASIN — cheap, but only exists for
-      // older listings. Newer ones answer with a 43-byte placeholder pixel, so
-      // fall through to the mobile product page.
+      // Two sources, with different failure modes. The legacy catalogue path is
+      // always the correct product but exists only for older listings and can be
+      // as small as 500px. The mobile gallery is full resolution but occasionally
+      // leads with an infographic. Prefer legacy when it is sharp enough for a
+      // retina card, otherwise fall back to mobile.
       const legacy = `https://images-na.ssl-images-amazon.com/images/P/${gift.source.asin}.01._SCLZZZZZZZ_.jpg`;
-      const probe = execFileSync("curl", ["-sL", "--max-time", "20", "-o", "-", "-w", "%{size_download}", legacy], {
-        encoding: "latin1",
-        maxBuffer: 64 * 1024 * 1024,
-      });
-      const size = Number(probe.slice(probe.lastIndexOf("\n") + 1)) || Number(probe.match(/(\d+)$/)?.[1] ?? 0);
-      if (size > 3000) return legacy;
-      return await amazonMobileImage(gift.source.asin);
+      const buf = execFileSync("curl", ["-sL", "--max-time", "20", legacy], { maxBuffer: 64 * 1024 * 1024 });
+      if (buf.length > 3000) {
+        const { width } = await sharp(buf).metadata();
+        if (width >= 700) return legacy;
+        console.log(`         (${gift.slug}: legacy image only ${width}px, trying the mobile gallery)`);
+      }
+      return (await amazonMobileImage(gift.source.asin)) ?? (buf.length > 3000 ? legacy : null);
     }
     case "bestbuy":
       return `https://pisces.bbystatic.com/image2/BestBuy_US/images/products/${gift.source.sku.slice(0, 4)}/${gift.source.sku}_sd.jpg`;

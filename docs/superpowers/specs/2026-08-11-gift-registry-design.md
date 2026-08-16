@@ -31,9 +31,20 @@ No retailer exposes a price reliably, and prices drift constantly, so prices are
 entered once and displayed as approximate. Live scraping at request time would
 be slow and would break; the database is the source of truth.
 
-Eight images are fetched and committed by a script. Four (West Elm, Le Creuset,
-and the two Knot items) are supplied by hand. A gift with no image renders a
-typographic placeholder, so a missing image never looks broken.
+Ten images are fetched and committed by a script. Two — West Elm and Le Creuset
+— are supplied by hand. A gift with no image renders a typographic placeholder,
+so a missing image never looks broken.
+
+**Amendment, 2026-08-16.** The two The Knot items were moved to equivalent
+Amazon listings (Mikasa Cheers wine glasses; Made In 8 qt stock pot, which has
+the pasta insert the note asked for). The Knot is itself a registry service, so
+"View at The Knot" sent guests into another registry rather than a shop, and its
+images could not be fetched. Amazon exposes two image sources with opposite
+failure modes: the legacy catalogue path is always the right product but is
+sometimes only 500px, while the mobile gallery is full resolution but can lead
+with a marketing infographic. The fetcher prefers legacy when it is at least
+700px wide and falls back to mobile — and downloaded images must still be looked
+at before committing.
 
 **Claiming is identified by the invite token.** Guests arriving from their
 personal link are already known, so claiming is one tap with nothing to type.
