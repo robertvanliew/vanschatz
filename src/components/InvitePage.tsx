@@ -2,7 +2,14 @@ import Image from "next/image";
 import FloralHero from "@/components/FloralHero";
 import Countdown from "@/components/Countdown";
 import ShaderBackground from "@/components/ShaderBackground";
-import { WhenWhere, Details, Registry, Reveal, SectionHeading } from "@/components/Sections";
+import {
+  WhenWhere,
+  Details,
+  Registry,
+  Reveal,
+  SectionHeading,
+  type RegistryPreviewGift,
+} from "@/components/Sections";
 import RsvpCard from "@/components/RsvpCard";
 import EmailRsvpForm from "@/components/EmailRsvpForm";
 
@@ -18,9 +25,14 @@ export type InviteGuest = {
 export default function InvitePage({
   guest,
   unknownToken = false,
+  registryPreview = [],
+  registryTotal = 0,
 }: {
   guest: InviteGuest | null;
   unknownToken?: boolean;
+  /** A few product shots for the Gifts teaser; empty renders "coming soon". */
+  registryPreview?: RegistryPreviewGift[];
+  registryTotal?: number;
 }) {
   return (
     <main>
@@ -72,7 +84,11 @@ export default function InvitePage({
           <EmailRsvpForm />
         </Reveal>
       </section>
-      <Registry />
+      <Registry
+        preview={registryPreview}
+        total={registryTotal}
+        href={guest ? `/invite/${guest.token}/registry` : "/registry"}
+      />
       <footer className="pb-16 text-center text-sm text-ink-dim">
         <p className="font-display text-lg italic">With love, Julie &amp; Robert</p>
       </footer>

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { WEDDING } from "@/lib/wedding";
 import { computeTallies } from "@/lib/rsvp";
 import { isPracticeMode } from "@/lib/messaging";
+import { formatPrice } from "@/lib/registry";
 import {
   isAdmin,
   addGuestAction,
@@ -13,6 +14,11 @@ import {
   sendAllInvitesAction,
   manualRemindersAction,
   scheduledRemindersAction,
+  addGiftAction,
+  updateGiftAction,
+  toggleGiftAction,
+  deleteGiftAction,
+  releaseClaimAction,
 } from "@/app/admin/actions";
 import { CopyLinkButton, ConfirmButton } from "@/app/admin/AdminUi";
 
@@ -45,6 +51,10 @@ export default async function AdminDashboard() {
   if (!(await isAdmin())) redirect("/admin/login");
 
   const guests = await db.guest.findMany({ orderBy: { createdAt: "asc" } });
+  const gifts = await db.gift.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    include: { claim: { include: { guest: true } } },
+  });
   const logs = await db.reminderLog.findMany({
     orderBy: { sentAt: "desc" },
     take: 50,
@@ -221,6 +231,147 @@ export default async function AdminDashboard() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className={`${card} mt-8 p-7`}>
+        <h2 className="text-sm tracking-[0.25em] text-gold uppercase">Gifts</h2>
+        <p className="mt-2 text-xs text-ink-dim">
+          {gifts.length} on the registry &middot; {gifts.filter((g) => g.claim).length} claimed
+        </p>
+
+        <form
+          action={addGiftAction}
+          className="mt-5 grid gap-3 rounded-2xl border border-line bg-[#faf8f4] p-4 sm:grid-cols-2"
+        >
+          <input name="title" placeholder="Gift name" required className={inputCls} />
+          <input name="retailer" placeholder="Shop (e.g. Amazon)" className={inputCls} />
+          <input
+            name="url"
+            type="url"
+            placeholder="Link to the product page"
+            required
+            className={`${inputCls} sm:col-span-2`}
+          />
+          <input name="note" placeholder="Note (e.g. 8.5 qt, grey)" className={inputCls} />
+          <input name="price" placeholder="Approx. price (e.g. 129.99)" className={inputCls} />
+          <input
+            name="image"
+            placeholder="Image link — right-click the product photo, Copy image address"
+            className={`${inputCls} sm:col-span-2`}
+          />
+          <div className="sm:col-span-2">
+            <button type="submit" className={primaryBtn}>
+              Add gift
+            </button>
+          </div>
+        </form>
+
+        <ul className="mt-6 space-y-3">
+          {gifts.map((gift) => (
+            <li
+              key={gift.id}
+              className={`rounded-2xl border border-line bg-white p-4 ${gift.active ? "" : "opacity-55"}`}
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-line bg-white">
+                  {gift.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={gift.image} alt="" className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[10px] text-ink-dim">
+                      no
+                      <br />
+                      image
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{gift.title}</p>
+                  <p className="truncate text-xs text-ink-dim">
+                    {gift.retailer}
+                    {gift.priceCents ? ` · ${formatPrice(gift.priceCents)}` : " · no price set"}
+                    {gift.active ? "" : " · hidden"}
+                  </p>
+                </div>
+
+                {gift.claim ? (
+                  <span className="rounded-full border border-[#bcd0ac] bg-[#eef4e7] px-3 py-1 text-[11px] tracking-wider text-[#5f7554] uppercase">
+                    {gift.claim.guest?.name ?? "Claimed"}
+                  </span>
+                ) : (
+                  <span className="text-xs text-ink-dim">unclaimed</span>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  {gift.claim && (
+                    <form action={releaseClaimAction}>
+                      <input type="hidden" name="id" value={gift.id} />
+                      <ConfirmButton
+                        className={ghostBtn}
+                        message={`Release ${gift.claim.guest?.name ?? "this"} claim on “${gift.title}”? They'll no longer be marked as getting it.`}
+                        confirmLabel="Release"
+                      >
+                        Release
+                      </ConfirmButton>
+                    </form>
+                  )}
+                  <form action={toggleGiftAction}>
+                    <input type="hidden" name="id" value={gift.id} />
+                    <button type="submit" className={ghostBtn}>
+                      {gift.active ? "Hide" : "Show"}
+                    </button>
+                  </form>
+                  <form action={deleteGiftAction}>
+                    <input type="hidden" name="id" value={gift.id} />
+                    <ConfirmButton
+                      className={ghostBtn}
+                      tone="danger"
+                      message={`Delete “${gift.title}” from the registry for good?`}
+                      confirmLabel="Delete"
+                    >
+                      Delete
+                    </ConfirmButton>
+                  </form>
+                </div>
+              </div>
+
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs text-ink-dim">Edit details</summary>
+                <form action={updateGiftAction} className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <input type="hidden" name="id" value={gift.id} />
+                  <input name="title" defaultValue={gift.title} required className={inputCls} />
+                  <input name="retailer" defaultValue={gift.retailer} className={inputCls} />
+                  <input
+                    name="url"
+                    type="url"
+                    defaultValue={gift.url}
+                    required
+                    className={`${inputCls} sm:col-span-2`}
+                  />
+                  <input name="note" defaultValue={gift.note ?? ""} className={inputCls} />
+                  <input
+                    name="price"
+                    defaultValue={gift.priceCents ? (gift.priceCents / 100).toFixed(2) : ""}
+                    placeholder="Approx. price"
+                    className={inputCls}
+                  />
+                  <input
+                    name="image"
+                    defaultValue={gift.image ?? ""}
+                    placeholder="Image link or /registry/<name>.jpg"
+                    className={`${inputCls} sm:col-span-2`}
+                  />
+                  <div className="sm:col-span-2">
+                    <button type="submit" className={ghostBtn}>
+                      Save changes
+                    </button>
+                  </div>
+                </form>
+              </details>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className={`${card} mt-8 p-7`}>

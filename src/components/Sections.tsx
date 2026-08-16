@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { WEDDING, mapsUrl, mapsEmbedUrl, mapsDirUrl } from "@/lib/wedding";
 
@@ -119,14 +120,82 @@ export function Details() {
   );
 }
 
-export function Registry() {
+export type RegistryPreviewGift = {
+  id: string;
+  title: string;
+  image: string | null;
+  initials: string;
+};
+
+/**
+ * The Gifts teaser, shown on both the home page and every personal invitation
+ * (they render the same component). Three product shots and a way through to
+ * the full registry — the grid itself lives on its own page so the invitation
+ * doesn't turn into a catalogue.
+ *
+ * `href` carries the guest's token when there is one, so claiming works on the
+ * other side without them having to find their invite again.
+ */
+export function Registry({
+  preview = [],
+  total = 0,
+  href = "/registry",
+}: {
+  preview?: RegistryPreviewGift[];
+  total?: number;
+  href?: string;
+}) {
   return (
     <section className="mx-auto max-w-3xl px-6 py-24 text-center">
       <Reveal>
         <SectionHeading>Gifts</SectionHeading>
-        <p className="mx-auto max-w-xl text-ink-dim">
-          Your presence is the greatest gift. Our registry is coming soon — check back here closer to the day.
-        </p>
+
+        {total === 0 ? (
+          <p className="mx-auto max-w-xl text-ink-dim">
+            Your presence is the greatest gift. Our registry is coming soon — check back here
+            closer to the day.
+          </p>
+        ) : (
+          <>
+            <p className="mx-auto max-w-xl text-ink-dim">
+              Your presence is the greatest gift — but a few people asked, so we&rsquo;ve put
+              together a small list of things we&rsquo;ve had our eye on.
+            </p>
+
+            <div className="mx-auto mt-10 grid max-w-lg grid-cols-3 gap-4">
+              {preview.map((gift) => (
+                <div
+                  key={gift.id}
+                  className="aspect-square overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_14px_34px_-22px_rgba(107,79,150,0.55)]"
+                >
+                  {gift.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={gift.image}
+                      alt={gift.title}
+                      loading="lazy"
+                      className="h-full w-full object-contain p-3"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#f6f1fb] to-[#f3eee7]">
+                      <span className="font-display text-2xl font-light italic text-[#b9a9d2]">
+                        {gift.initials}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <Link
+              href={href}
+              className="mt-10 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#6b4f96] to-[#8a6db1] px-7 py-3 text-sm font-medium text-white shadow-sm transition-[filter,transform] hover:brightness-110 active:scale-[0.98]"
+            >
+              See all {total} gifts
+              <span aria-hidden>&rarr;</span>
+            </Link>
+          </>
+        )}
       </Reveal>
     </section>
   );

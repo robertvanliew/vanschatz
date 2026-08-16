@@ -21,6 +21,40 @@ model Guest {
   respondedAt DateTime?
   createdAt   DateTime      @default(now())
   reminders   ReminderLog[]
+  giftClaims  GiftClaim[]
+}
+
+/// A single registry item. Guests are sent to `url` to buy it; nothing is sold
+/// here. `priceCents` is approximate and may be absent — retailers move prices
+/// constantly and several block us from reading them at all.
+model Gift {
+  id         String     @id @default(cuid())
+  slug       String     @unique
+  title      String
+  note       String? // "14-in-1, 8.5 qt, sea salt grey"
+  retailer   String // "Amazon", "West Elm", ...
+  url        String
+  /// "/registry/<slug>.jpg" for seeded gifts, or an absolute URL for gifts added
+  /// later — Vercel's filesystem is read-only at runtime, so the admin form
+  /// takes an image link rather than an upload.
+  image      String?
+  priceCents Int?
+  sortOrder  Int        @default(0)
+  active     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  claim      GiftClaim?
+}
+
+/// One row per claimed gift. The unique constraint on giftId is what actually
+/// prevents two guests buying the same present — not the hidden button.
+model GiftClaim {
+  id          String   @id @default(cuid())
+  giftId      String   @unique
+  gift        Gift     @relation(fields: [giftId], references: [id], onDelete: Cascade)
+  guestId     String?
+  guest       Guest?   @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  claimedName String? // for a claim made without an invite link
+  claimedAt   DateTime @default(now())
 }
 
 model ReminderLog {

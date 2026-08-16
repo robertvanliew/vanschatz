@@ -87,6 +87,105 @@ export async function sendAllInvitesAction(): Promise<void> {
   revalidatePath("/admin");
 }
 
+/* ---------------------------------------------------------------- registry */
+
+/** Dollars as typed ("129.99", "$130", "") into integer cents, or null. */
+function parsePriceCents(raw: string): number | null {
+  const cleaned = raw.replace(/[$,\s]/g, "");
+  if (!cleaned) return null;
+  const value = Number(cleaned);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return Math.round(value * 100);
+}
+
+/** A slug that stays readable and stable, from the gift's title. */
+function slugify(title: string): string {
+  return (
+    title
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || `gift-${Date.now()}`
+  );
+}
+
+export async function addGiftAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const title = String(formData.get("title") ?? "").trim();
+  const url = String(formData.get("url") ?? "").trim();
+  if (!title || !url) return;
+
+  // Keep slugs unique without surprising the couple with an error page.
+  const base = slugify(title);
+  let slug = base;
+  for (let n = 2; await db.gift.findUnique({ where: { slug } }); n++) slug = `${base}-${n}`;
+
+  const last = await db.gift.findFirst({ orderBy: { sortOrder: "desc" } });
+
+  await db.gift.create({
+    data: {
+      slug,
+      title,
+      url,
+      retailer: String(formData.get("retailer") ?? "").trim() || "Shop",
+      note: String(formData.get("note") ?? "").trim() || null,
+      image: String(formData.get("image") ?? "").trim() || null,
+      priceCents: parsePriceCents(String(formData.get("price") ?? "")),
+      sortOrder: (last?.sortOrder ?? 0) + 1,
+    },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/registry");
+}
+
+export async function updateGiftAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const title = String(formData.get("title") ?? "").trim();
+  const url = String(formData.get("url") ?? "").trim();
+  if (!id || !title || !url) return;
+
+  await db.gift.update({
+    where: { id },
+    data: {
+      title,
+      url,
+      retailer: String(formData.get("retailer") ?? "").trim() || "Shop",
+      note: String(formData.get("note") ?? "").trim() || null,
+      image: String(formData.get("image") ?? "").trim() || null,
+      priceCents: parsePriceCents(String(formData.get("price") ?? "")),
+    },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/registry");
+}
+
+/** Hide or show a gift without deleting it — and without losing its claim. */
+export async function toggleGiftAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const gift = await db.gift.findUnique({ where: { id } });
+  if (!gift) return;
+  await db.gift.update({ where: { id }, data: { active: !gift.active } });
+  revalidatePath("/admin");
+  revalidatePath("/registry");
+}
+
+export async function deleteGiftAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await db.gift.delete({ where: { id: String(formData.get("id")) } });
+  revalidatePath("/admin");
+  revalidatePath("/registry");
+}
+
+/** Release a claim on a guest's behalf — for "I actually bought that instead". */
+export async function releaseClaimAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await db.giftClaim.deleteMany({ where: { giftId: String(formData.get("id")) } });
+  revalidatePath("/admin");
+  revalidatePath("/registry");
+}
+
 export async function manualRemindersAction(): Promise<void> {
   await requireAdmin();
   await runManualReminders(new Date());
