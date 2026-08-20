@@ -1,16 +1,20 @@
-import { renderFlyer } from "@/lib/flyer";
-
 export const runtime = "nodejs";
 
 /**
  * GET /invite/<token>/flyer — the wedding flyer as a JPEG, with a QR that points
  * at this guest's personal RSVP page. Embedded in invite/reminder emails.
  *
- * If rendering fails, this falls back to the static poster rather than erroring.
- * A 500 here shows every recipient a broken image in their invitation, which is
- * far worse than a flyer whose QR points at the site root instead of at their
- * personal page. The reason is put in a response header so the failure can be
- * diagnosed from outside without reading the hosting platform's logs.
+ * The flyer renderer is imported *inside* the handler, not at module scope.
+ * It depends on sharp, a native module, and when sharp fails to load on the
+ * hosting platform a top-level import takes the whole route module down before
+ * any handler code runs — which is exactly what happened here: the route
+ * returned 500 with no error of ours anywhere, because our try/catch had never
+ * executed. Importing lazily turns that into a catchable error.
+ *
+ * On any failure this falls back to the static poster. A guest seeing a flyer
+ * whose QR points at the site root is vastly better than a broken image in
+ * their wedding invitation, and the invite email carries their personal link as
+ * a button regardless.
  */
 export async function GET(
   _req: Request,
@@ -20,6 +24,7 @@ export async function GET(
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://thevanschatz.com";
 
   try {
+    const { renderFlyer } = await import("@/lib/flyer");
     const jpeg = await renderFlyer(`${base}/invite/${encodeURIComponent(token)}`);
     return new Response(new Uint8Array(jpeg), {
       headers: {
