@@ -108,6 +108,9 @@ export async function saveShippingAction(formData: FormData): Promise<void> {
   revalidatePath("/admin");
   // Every guest's registry shows the address, so they all need rebuilding.
   revalidatePath("/invite/[token]/registry", "page");
+  // Come back with a flag so the page can confirm it saved. Without this the
+  // form re-renders looking identical and there is no way to tell it worked.
+  redirect("/admin?saved=shipping");
 }
 
 /* ---------------------------------------------------------------- registry */

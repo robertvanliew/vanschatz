@@ -6,7 +6,7 @@ import { computeTallies } from "@/lib/rsvp";
 import { isPracticeMode } from "@/lib/messaging";
 import { formatPrice } from "@/lib/registry";
 import { readSettings } from "@/lib/settings";
-import { SHIPPING_KEYS } from "@/lib/shipping";
+import { SHIPPING_KEYS, addressLines, toShipping } from "@/lib/shipping";
 import {
   isAdmin,
   addGuestAction,
@@ -50,8 +50,13 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}) {
   if (!(await isAdmin())) redirect("/admin/login");
+  const { saved } = await searchParams;
 
   const guests = await db.guest.findMany({ orderBy: { createdAt: "asc" } });
   const gifts = await db.gift.findMany({
@@ -59,6 +64,7 @@ export default async function AdminDashboard() {
     include: { claim: { include: { guest: true } } },
   });
   const settings = await readSettings();
+  const shipping = toShipping(settings);
   const claims = gifts.map((g) => g.claim).filter((c) => c !== null);
   const shippingCount = claims.filter((c) => c.delivery === "SHIP").length;
   const bringingCount = claims.filter((c) => c.delivery === "BRING").length;
@@ -249,6 +255,12 @@ export default async function AdminDashboard() {
           never stored in the code. Leave both boxes empty to remove it from the site.
         </p>
 
+        {saved === "shipping" && (
+          <p className="mt-4 rounded-xl border border-[#bcd0ac] bg-[#eef4e7] px-4 py-2.5 text-sm text-[#5f7554]">
+            Saved. Guests can see this now.
+          </p>
+        )}
+
         <form action={saveShippingAction} className="mt-5 grid gap-3 sm:grid-cols-2">
           <input
             name="recipient"
@@ -275,6 +287,36 @@ export default async function AdminDashboard() {
             </button>
           </div>
         </form>
+
+        <div className="mt-6 rounded-2xl border border-line bg-[#faf8f4] p-5">
+          <p className="text-[11px] tracking-[0.18em] text-ink-dim uppercase">
+            What a guest sees
+          </p>
+          {shipping ? (
+            <>
+              <p className="mt-3 text-xs text-ink-dim">
+                After they tap &ldquo;I&rsquo;m getting this&rdquo; and choose &ldquo;Post it to
+                you&rdquo;:
+              </p>
+              <address className="not-italic mt-2 text-sm leading-relaxed text-ink">
+                {addressLines(shipping).map((line) => (
+                  <span key={line} className="block">
+                    {line}
+                  </span>
+                ))}
+              </address>
+              {shipping.arriveBy && (
+                <p className="mt-2 text-xs text-ink-dim">
+                  Please aim for it to arrive by {shipping.arriveBy}.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-ink-dim">
+              Nothing yet — guests are told to ask you. Fill in a name and an address above.
+            </p>
+          )}
+        </div>
 
         <div className="mt-5 flex flex-wrap gap-4 text-sm">
           <span className="text-ink-dim">
