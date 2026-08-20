@@ -148,7 +148,7 @@ function TileCard({
                 rel="noopener noreferrer"
                 className="mt-3 block rounded-full bg-[#0070ba] px-4 py-2.5 text-center text-sm font-medium text-white transition-[filter] hover:brightness-110"
               >
-                Open PayPal &middot; {money(chosenCents)}
+                Donate {money(chosenCents)} with PayPal
               </a>
             )}
 
@@ -163,7 +163,8 @@ function TileCard({
 
             {error && <p className="mt-2 text-center text-xs text-[#a8425f]">{error}</p>}
             <p className="mt-2 text-center text-[11px] leading-relaxed text-ink-dim">
-              Send it in PayPal first, then tap &ldquo;I&rsquo;ve sent this&rdquo; so the bar knows.
+              PayPal opens with the amount filled in &mdash; it goes to Julie &amp; Robert. Send it
+              there first, then tap &ldquo;I&rsquo;ve sent this&rdquo; so the bar knows.
             </p>
           </div>
         )}
@@ -212,7 +213,8 @@ export default function FundSection({
       </ul>
 
       <p className="mx-auto mt-10 max-w-xl text-center text-xs text-ink-dim">
-        Money goes straight to us through PayPal — nothing is taken by this page.
+        Donations go straight to Julie &amp; Robert through PayPal &mdash; nothing is taken by this
+        page.
       </p>
     </section>
   );
