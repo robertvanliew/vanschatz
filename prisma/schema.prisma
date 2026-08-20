@@ -27,6 +27,7 @@ model Guest {
   createdAt   DateTime      @default(now())
   reminders   ReminderLog[]
   giftClaims  GiftClaim[]
+  contributions Contribution[]
 }
 
 /// A single registry item. Guests are sent to `url` to buy it; nothing is sold
@@ -85,4 +86,43 @@ model ReminderLog {
   sentAt      DateTime @default(now())
 
   @@unique([guestId, scheduleKey, channel])
+}
+
+/// A named piece of the honeymoon guests can put money toward — "dinner for
+/// two", "a night's stay". Cash is a hard thing to ask for; a specific thing
+/// with a price is an easy yes, and it gives the couple something particular to
+/// say thank you for.
+model FundTile {
+  id            String         @id @default(cuid())
+  slug          String         @unique
+  title         String
+  note          String?
+  targetCents   Int
+  /// Buttons offered on the card, e.g. [2500, 5000, 10000]. Always plus "other".
+  suggested     Int[]
+  sortOrder     Int            @default(0)
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  contributions Contribution[]
+}
+
+/// One guest saying they have sent money toward a tile.
+///
+/// This records intent, not a verified payment: money moves through PayPal,
+/// which tells us nothing. `confirmed` is the couple ticking it off against
+/// their own PayPal history. The public bar counts every row, because a bar
+/// that only moves after manual confirmation kills the momentum that makes
+/// this work at all.
+model Contribution {
+  id          String   @id @default(cuid())
+  tileId      String
+  tile        FundTile @relation(fields: [tileId], references: [id], onDelete: Cascade)
+  guestId     String?
+  guest       Guest?   @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  /// Typed name, for someone giving without a personal invite link.
+  givenName   String?
+  amountCents Int
+  message     String?
+  confirmed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }

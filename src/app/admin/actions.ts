@@ -11,6 +11,7 @@ import { runManualReminders, runScheduledReminders } from "@/lib/reminders";
 import { sendInviteToGuest, sendAllInvites } from "@/lib/invites";
 import { writeSettings } from "@/lib/settings";
 import { SHIPPING_KEYS } from "@/lib/shipping";
+import { FUND_KEYS, parseAmount } from "@/lib/fund";
 
 function sessionValue(): string {
   return createHash("sha256").update(process.env.ADMIN_PASSWORD ?? "").digest("hex");
@@ -111,6 +112,94 @@ export async function saveShippingAction(formData: FormData): Promise<void> {
   // Come back with a flag so the page can confirm it saved. Without this the
   // form re-renders looking identical and there is no way to tell it worked.
   redirect("/admin?saved=shipping");
+}
+
+/* -------------------------------------------------------------------- fund */
+
+/** Save the PayPal link and the fund's wording. Clearing the link hides the fund. */
+export async function saveFundAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await writeSettings({
+    [FUND_KEYS.payLink]: String(formData.get("payLink") ?? "").trim(),
+    [FUND_KEYS.heading]: String(formData.get("heading") ?? "").trim(),
+    [FUND_KEYS.blurb]: String(formData.get("blurb") ?? "").trim(),
+  });
+  revalidatePath("/admin");
+  revalidatePath("/registry");
+  revalidatePath("/invite/[token]/registry", "page");
+  redirect("/admin?saved=fund");
+}
+
+/** Suggested amounts typed as "25, 50, 100" into cents. */
+function parseSuggested(raw: string): number[] {
+  return raw
+    .split(/[,\s]+/)
+    .map((part) => parseAmount(part))
+    .filter((r): r is { ok: true; cents: number } => r.ok)
+    .map((r) => r.cents)
+    .slice(0, 4);
+}
+
+export async function saveTileAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const target = parseAmount(String(formData.get("target") ?? ""));
+  if (!title || !target.ok) return;
+
+  const data = {
+    title,
+    note: String(formData.get("note") ?? "").trim() || null,
+    targetCents: target.cents,
+    suggested: parseSuggested(String(formData.get("suggested") ?? "")),
+  };
+
+  if (id) {
+    await db.fundTile.update({ where: { id }, data });
+  } else {
+    const base = slugify(title);
+    let slug = base;
+    for (let n = 2; await db.fundTile.findUnique({ where: { slug } }); n++) slug = `${base}-${n}`;
+    const last = await db.fundTile.findFirst({ orderBy: { sortOrder: "desc" } });
+    await db.fundTile.create({ data: { slug, sortOrder: (last?.sortOrder ?? 0) + 1, ...data } });
+  }
+  revalidatePath("/admin");
+  revalidatePath("/registry");
+}
+
+export async function toggleTileAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const tile = await db.fundTile.findUnique({ where: { id } });
+  if (!tile) return;
+  await db.fundTile.update({ where: { id }, data: { active: !tile.active } });
+  revalidatePath("/admin");
+  revalidatePath("/registry");
+}
+
+export async function deleteTileAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await db.fundTile.delete({ where: { id: String(formData.get("id")) } });
+  revalidatePath("/admin");
+  revalidatePath("/registry");
+}
+
+/** Tick a contribution off against the couple's own PayPal history. */
+export async function confirmContributionAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const c = await db.contribution.findUnique({ where: { id } });
+  if (!c) return;
+  await db.contribution.update({ where: { id }, data: { confirmed: !c.confirmed } });
+  revalidatePath("/admin");
+}
+
+/** Remove a contribution that never arrived. This lowers the public bar. */
+export async function deleteContributionAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await db.contribution.delete({ where: { id: String(formData.get("id")) } });
+  revalidatePath("/admin");
+  revalidatePath("/registry");
 }
 
 /* ---------------------------------------------------------------- registry */

@@ -24,6 +24,7 @@ import {
   releaseClaimAction,
 } from "@/app/admin/actions";
 import { CopyLinkButton, ConfirmButton } from "@/app/admin/AdminUi";
+import FundAdmin from "@/app/admin/FundAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,15 @@ export default async function AdminDashboard({
   });
   const settings = await readSettings();
   const shipping = toShipping(settings);
+  const tiles = await db.fundTile.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    include: {
+      contributions: {
+        include: { guest: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
   const claims = gifts.map((g) => g.claim).filter((c) => c !== null);
   const shippingCount = claims.filter((c) => c.delivery === "SHIP").length;
   const bringingCount = claims.filter((c) => c.delivery === "BRING").length;
@@ -490,6 +500,16 @@ export default async function AdminDashboard({
           ))}
         </ul>
       </section>
+
+      <FundAdmin
+        tiles={tiles}
+        settings={settings}
+        saved={saved}
+        card={card}
+        primaryBtn={primaryBtn}
+        ghostBtn={ghostBtn}
+        inputCls={inputCls}
+      />
 
       <section className={`${card} mt-8 p-7`}>
         <h2 className="text-sm tracking-[0.25em] text-gold uppercase">Invitations</h2>

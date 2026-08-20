@@ -3,6 +3,8 @@ import GiftGrid from "./GiftGrid";
 import ShaderBackground from "@/components/ShaderBackground";
 import { type GiftView } from "@/lib/registry";
 import { addressLines, type Shipping } from "@/lib/shipping";
+import FundSection from "./FundSection";
+import type { FundView } from "@/lib/fund-data";
 
 /**
  * The registry page body, shared by /registry and /invite/<token>/registry.
@@ -15,6 +17,7 @@ export default function RegistryPage({
   guestName,
   token,
   shipping,
+  fund,
 }: {
   gifts: GiftView[];
   guestId: string | null;
@@ -22,6 +25,8 @@ export default function RegistryPage({
   token: string | null;
   /** Already filtered by visibleShipping — null means do not show an address. */
   shipping: Shipping | null;
+  /** Null until the couple has added tiles and a PayPal link. */
+  fund: FundView | null;
 }) {
   return (
     <main>
@@ -75,6 +80,8 @@ export default function RegistryPage({
         <p className="mx-auto mt-16 max-w-xl text-center text-sm text-ink-dim">
           Prices are approximate and change often &mdash; the shop&rsquo;s price is the real one.
         </p>
+
+        {fund && <FundSection fund={fund} token={token} />}
       </section>
     </main>
   );

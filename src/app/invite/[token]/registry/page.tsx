@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import RegistryPage from "@/components/registry/RegistryPage";
 import { listGifts } from "@/lib/gifts";
+import { readFund } from "@/lib/fund-data";
 import { readShipping } from "@/lib/settings";
 import { visibleShipping } from "@/lib/shipping";
 
@@ -19,15 +20,23 @@ export default async function GuestRegistry({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const [guest, gifts, shipping] = await Promise.all([
+  const [guest, gifts, shipping, fund] = await Promise.all([
     db.guest.findUnique({ where: { token } }),
     listGifts(),
     readShipping(),
+    readFund(),
   ]);
 
   if (!guest) {
     return (
-      <RegistryPage gifts={gifts} guestId={null} guestName={null} token={null} shipping={null} />
+      <RegistryPage
+        gifts={gifts}
+        guestId={null}
+        guestName={null}
+        token={null}
+        shipping={null}
+        fund={fund}
+      />
     );
   }
 
@@ -38,6 +47,7 @@ export default async function GuestRegistry({
       guestName={guest.name}
       token={guest.token}
       shipping={visibleShipping(shipping, true)}
+      fund={fund}
     />
   );
 }
