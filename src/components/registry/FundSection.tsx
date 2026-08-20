@@ -163,8 +163,10 @@ function TileCard({
 
             {error && <p className="mt-2 text-center text-xs text-[#a8425f]">{error}</p>}
             <p className="mt-2 text-center text-[11px] leading-relaxed text-ink-dim">
-              PayPal opens with the amount filled in &mdash; it goes to Julie &amp; Robert. Send it
-              there first, then tap &ldquo;I&rsquo;ve sent this&rdquo; so the bar knows.
+              PayPal opens with the amount filled in and will show{" "}
+              <span className="text-ink">Robert Vanliew</span> &mdash; that&rsquo;s us, it&rsquo;s
+              the right place. Send it there first, then tap &ldquo;I&rsquo;ve sent this&rdquo; so
+              the bar knows.
             </p>
           </div>
         )}
