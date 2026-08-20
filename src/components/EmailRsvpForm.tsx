@@ -43,7 +43,16 @@ function Stepper({
   );
 }
 
-export default function EmailRsvpForm() {
+export default function EmailRsvpForm({
+  variant = "link",
+}: {
+  /**
+   * "primary" is used when the visitor has no personal link — someone who
+   * scanned the QR on a printed invitation. For them this is the only way to
+   * reply, so it has to look like the way to reply, not a footnote.
+   */
+  variant?: "link" | "primary";
+} = {}) {
   const [open, setOpen] = useState(false);
   const [attending, setAttending] = useState<boolean | null>(null);
   const [name, setName] = useState("");
@@ -95,16 +104,32 @@ export default function EmailRsvpForm() {
 
   return (
     <>
-      <p className="mt-6 text-center text-sm text-ink-dim">
-        Prefer to reply by email?{" "}
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="cursor-pointer text-gold underline-offset-4 hover:underline"
-        >
-          Send us your RSVP here
-        </button>
-      </p>
+      {variant === "primary" ? (
+        <div className="mt-2 text-center">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="cursor-pointer rounded-full bg-gradient-to-r from-[#6b4f96] to-[#8a6db1] px-8 py-3.5 text-sm font-medium tracking-wide text-white shadow-sm transition-[filter,transform] hover:brightness-110 active:scale-[0.98]"
+          >
+            RSVP here
+          </button>
+          <p className="mt-4 text-xs text-ink-dim">
+            Got a personal link in a text or email? Opening that instead saves you typing
+            your name.
+          </p>
+        </div>
+      ) : (
+        <p className="mt-6 text-center text-sm text-ink-dim">
+          Prefer to reply by email?{" "}
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="cursor-pointer text-gold underline-offset-4 hover:underline"
+          >
+            Send us your RSVP here
+          </button>
+        </p>
+      )}
 
       <AnimatePresence>
         {open && (

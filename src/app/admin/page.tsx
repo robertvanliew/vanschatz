@@ -169,7 +169,17 @@ export default async function AdminDashboard({
                 return (
                 <tr key={g.id} className="border-b border-line/70 last:border-0">
                   <td className="py-4 pr-4">
-                    <div className="font-medium">{g.name}</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{g.name}</span>
+                      {g.source === "website" && (
+                        <span
+                          title="RSVP'd from the website without a personal link — check this isn't a duplicate of someone already on the list"
+                          className="rounded-full border border-[#e6d3ab] bg-[#faf4e6] px-2 py-0.5 text-[10px] tracking-wider text-gold uppercase"
+                        >
+                          self-added
+                        </span>
+                      )}
+                    </div>
                     {g.party && (
                       <div className="mt-0.5 text-xs text-ink-dim">
                         bringing: {g.party} · party of {invitedSize}

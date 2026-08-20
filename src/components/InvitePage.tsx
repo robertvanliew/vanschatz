@@ -73,15 +73,23 @@ export default function InvitePage({
         <Reveal>
           <SectionHeading>RSVP</SectionHeading>
           {guest ? (
-            <RsvpCard guest={guest} />
+            <>
+              <RsvpCard guest={guest} />
+              <EmailRsvpForm />
+            </>
           ) : (
-            <p className="text-center text-ink-dim">
-              {unknownToken
-                ? "We couldn't find your invitation — please reach out to Julie & Rob and we'll fix it right up."
-                : "Please use the personal link from your invitation text or email to RSVP."}
-            </p>
+            <>
+              {/* Anyone here scanned the QR on a printed invitation and has no
+                  personal link. Telling them to go and find one is a dead end —
+                  this is their way to reply, so it leads. */}
+              <p className="mb-6 text-center text-ink-dim">
+                {unknownToken
+                  ? "We couldn't find that invitation — but you can still reply right here."
+                  : "Can you make it? Let us know below."}
+              </p>
+              <EmailRsvpForm variant="primary" />
+            </>
           )}
-          <EmailRsvpForm />
         </Reveal>
       </section>
       <Registry

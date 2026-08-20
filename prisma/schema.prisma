@@ -19,6 +19,11 @@ model Guest {
   adults      Int           @default(0)
   children    Int           @default(0)
   respondedAt DateTime?
+  /// Null for guests the couple added. "website" marks someone who RSVP'd from
+  /// the printed invite's QR without a personal link and wasn't already on the
+  /// list — worth seeing, since it may be a duplicate of an existing guest
+  /// under a different spelling.
+  source      String?
   createdAt   DateTime      @default(now())
   reminders   ReminderLog[]
   giftClaims  GiftClaim[]
