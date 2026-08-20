@@ -23,6 +23,8 @@ export async function listGifts(): Promise<GiftView[]> {
     url: g.url,
     image: g.image,
     priceCents: g.priceCents,
-    claim: g.claim ? { guestId: g.claim.guestId, claimedName: null } : null,
+    claim: g.claim
+      ? { guestId: g.claim.guestId, claimedName: null, delivery: g.claim.delivery }
+      : null,
   }));
 }

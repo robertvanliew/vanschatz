@@ -5,6 +5,8 @@ import { WEDDING } from "@/lib/wedding";
 import { computeTallies } from "@/lib/rsvp";
 import { isPracticeMode } from "@/lib/messaging";
 import { formatPrice } from "@/lib/registry";
+import { readSettings } from "@/lib/settings";
+import { SHIPPING_KEYS } from "@/lib/shipping";
 import {
   isAdmin,
   addGuestAction,
@@ -14,6 +16,7 @@ import {
   sendAllInvitesAction,
   manualRemindersAction,
   scheduledRemindersAction,
+  saveShippingAction,
   addGiftAction,
   updateGiftAction,
   toggleGiftAction,
@@ -55,6 +58,11 @@ export default async function AdminDashboard() {
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     include: { claim: { include: { guest: true } } },
   });
+  const settings = await readSettings();
+  const claims = gifts.map((g) => g.claim).filter((c) => c !== null);
+  const shippingCount = claims.filter((c) => c.delivery === "SHIP").length;
+  const bringingCount = claims.filter((c) => c.delivery === "BRING").length;
+  const undecidedCount = claims.length - shippingCount - bringingCount;
   const logs = await db.reminderLog.findMany({
     orderBy: { sentAt: "desc" },
     take: 50,
@@ -234,6 +242,54 @@ export default async function AdminDashboard() {
       </section>
 
       <section className={`${card} mt-8 p-7`}>
+        <h2 className="text-sm tracking-[0.25em] text-gold uppercase">Where gifts are sent</h2>
+        <p className="mt-2 text-xs leading-relaxed text-ink-dim">
+          Shown only to guests who arrive on their own invite link, at the moment they say
+          they&rsquo;re getting something. Never appears on the public registry page, and is
+          never stored in the code. Leave both boxes empty to remove it from the site.
+        </p>
+
+        <form action={saveShippingAction} className="mt-5 grid gap-3 sm:grid-cols-2">
+          <input
+            name="recipient"
+            defaultValue={settings[SHIPPING_KEYS.recipient] ?? ""}
+            placeholder="Name to address it to"
+            className={inputCls}
+          />
+          <input
+            name="arriveBy"
+            defaultValue={settings[SHIPPING_KEYS.arriveBy] ?? ""}
+            placeholder="Please arrive by (e.g. 10 October 2026)"
+            className={inputCls}
+          />
+          <textarea
+            name="address"
+            defaultValue={settings[SHIPPING_KEYS.address] ?? ""}
+            placeholder={"Street address\nApt / unit\nCity, State ZIP"}
+            rows={3}
+            className={`${inputCls} sm:col-span-2`}
+          />
+          <div className="sm:col-span-2">
+            <button type="submit" className={primaryBtn}>
+              Save address
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-5 flex flex-wrap gap-4 text-sm">
+          <span className="text-ink-dim">
+            Arriving by post: <span className="font-medium text-ink">{shippingCount}</span>
+          </span>
+          <span className="text-ink-dim">
+            Being brought on the day: <span className="font-medium text-ink">{bringingCount}</span>
+          </span>
+          <span className="text-ink-dim">
+            Not said yet: <span className="font-medium text-ink">{undecidedCount}</span>
+          </span>
+        </div>
+      </section>
+
+      <section className={`${card} mt-8 p-7`}>
         <h2 className="text-sm tracking-[0.25em] text-gold uppercase">Gifts</h2>
         <p className="mt-2 text-xs text-ink-dim">
           {gifts.length} on the registry &middot; {gifts.filter((g) => g.claim).length} claimed
@@ -296,8 +352,17 @@ export default async function AdminDashboard() {
                 </div>
 
                 {gift.claim ? (
-                  <span className="rounded-full border border-[#bcd0ac] bg-[#eef4e7] px-3 py-1 text-[11px] tracking-wider text-[#5f7554] uppercase">
-                    {gift.claim.guest?.name ?? "Claimed"}
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full border border-[#bcd0ac] bg-[#eef4e7] px-3 py-1 text-[11px] tracking-wider text-[#5f7554] uppercase">
+                      {gift.claim.guest?.name ?? "Claimed"}
+                    </span>
+                    <span className="text-[11px] text-ink-dim">
+                      {gift.claim.delivery === "SHIP"
+                        ? "by post"
+                        : gift.claim.delivery === "BRING"
+                          ? "on the day"
+                          : "not said"}
+                    </span>
                   </span>
                 ) : (
                   <span className="text-xs text-ink-dim">unclaimed</span>

@@ -3,7 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import GiftCard from "./GiftCard";
-import { claimGift, unclaimGift } from "@/app/actions/registry";
+import { claimGift, setDelivery, unclaimGift } from "@/app/actions/registry";
+import type { Delivery, Shipping } from "@/lib/shipping";
 import {
   claimSummary,
   filterGifts,
@@ -23,11 +24,14 @@ export default function GiftGrid({
   gifts,
   guestId,
   token,
+  shipping,
 }: {
   gifts: GiftView[];
   /** Null on the public /registry — browsing works, claiming does not. */
   guestId: string | null;
   token: string | null;
+  /** Null on the public registry, where the address is never sent. */
+  shipping: Shipping | null;
 }) {
   const [filter, setFilter] = useState<GiftFilter>("all");
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -48,7 +52,7 @@ export default function GiftGrid({
         if (override === undefined) return g;
         return {
           ...g,
-          claim: override ? { guestId, claimedName: null } : null,
+          claim: override ? { guestId, claimedName: null, delivery: g.claim?.delivery ?? null } : null,
         } satisfies GiftView;
       }),
     [gifts, optimistic, guestId]
@@ -75,6 +79,19 @@ export default function GiftGrid({
           delete next[giftId];
           return next;
         });
+        setErrors((e) => ({ ...e, [giftId]: result.error ?? "That didn't work." }));
+      }
+      setPendingId(null);
+    });
+  }
+
+  function chooseDelivery(giftId: string, choice: Delivery) {
+    if (!token) return;
+    setPendingId(giftId);
+    setErrors((e) => ({ ...e, [giftId]: "" }));
+    startTransition(async () => {
+      const result = await setDelivery(token, giftId, choice);
+      if (!result.ok) {
         setErrors((e) => ({ ...e, [giftId]: result.error ?? "That didn't work." }));
       }
       setPendingId(null);
@@ -126,8 +143,10 @@ export default function GiftGrid({
               canClaim={Boolean(token)}
               pending={pendingId === gift.id}
               error={errors[gift.id] || null}
+              shipping={shipping}
               onClaim={() => run(gift.id, true)}
               onUnclaim={() => run(gift.id, false)}
+              onDelivery={(choice) => chooseDelivery(gift.id, choice)}
             />
           ))}
         </AnimatePresence>

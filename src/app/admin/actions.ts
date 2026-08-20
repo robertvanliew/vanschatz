@@ -9,6 +9,8 @@ import { makeToken } from "@/lib/tokens";
 import { validateRsvp } from "@/lib/rsvp";
 import { runManualReminders, runScheduledReminders } from "@/lib/reminders";
 import { sendInviteToGuest, sendAllInvites } from "@/lib/invites";
+import { writeSettings } from "@/lib/settings";
+import { SHIPPING_KEYS } from "@/lib/shipping";
 
 function sessionValue(): string {
   return createHash("sha256").update(process.env.ADMIN_PASSWORD ?? "").digest("hex");
@@ -85,6 +87,27 @@ export async function sendAllInvitesAction(): Promise<void> {
   await requireAdmin();
   await sendAllInvites();
   revalidatePath("/admin");
+}
+
+/* ---------------------------------------------------------------- shipping */
+
+/**
+ * Save where gifts should be sent. Stored in the database rather than the
+ * repository — it is a home address, and it is only ever served to pages
+ * reached with a valid invite token.
+ *
+ * Clearing both fields removes the address from the site entirely.
+ */
+export async function saveShippingAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await writeSettings({
+    [SHIPPING_KEYS.recipient]: String(formData.get("recipient") ?? "").trim(),
+    [SHIPPING_KEYS.address]: String(formData.get("address") ?? "").trim(),
+    [SHIPPING_KEYS.arriveBy]: String(formData.get("arriveBy") ?? "").trim(),
+  });
+  revalidatePath("/admin");
+  // Every guest's registry shows the address, so they all need rebuilding.
+  revalidatePath("/invite/[token]/registry", "page");
 }
 
 /* ---------------------------------------------------------------- registry */

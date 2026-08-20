@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import RegistryPage from "@/components/registry/RegistryPage";
 import { listGifts } from "@/lib/gifts";
+import { readShipping } from "@/lib/settings";
+import { visibleShipping } from "@/lib/shipping";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +19,16 @@ export default async function GuestRegistry({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const [guest, gifts] = await Promise.all([
+  const [guest, gifts, shipping] = await Promise.all([
     db.guest.findUnique({ where: { token } }),
     listGifts(),
+    readShipping(),
   ]);
 
   if (!guest) {
-    return <RegistryPage gifts={gifts} guestId={null} guestName={null} token={null} />;
+    return (
+      <RegistryPage gifts={gifts} guestId={null} guestName={null} token={null} shipping={null} />
+    );
   }
 
   return (
@@ -32,6 +37,7 @@ export default async function GuestRegistry({
       guestId={guest.id}
       guestName={guest.name}
       token={guest.token}
+      shipping={visibleShipping(shipping, true)}
     />
   );
 }

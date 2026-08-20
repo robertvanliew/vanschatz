@@ -2,6 +2,7 @@ import Link from "next/link";
 import GiftGrid from "./GiftGrid";
 import ShaderBackground from "@/components/ShaderBackground";
 import { type GiftView } from "@/lib/registry";
+import { addressLines, type Shipping } from "@/lib/shipping";
 
 /**
  * The registry page body, shared by /registry and /invite/<token>/registry.
@@ -13,11 +14,14 @@ export default function RegistryPage({
   guestId,
   guestName,
   token,
+  shipping,
 }: {
   gifts: GiftView[];
   guestId: string | null;
   guestName: string | null;
   token: string | null;
+  /** Already filtered by visibleShipping — null means do not show an address. */
+  shipping: Shipping | null;
 }) {
   return (
     <main>
@@ -46,7 +50,27 @@ export default function RegistryPage({
           </p>
         </div>
 
-        <GiftGrid gifts={gifts} guestId={guestId} token={token} />
+        {shipping && (
+          <details className="mx-auto mb-10 max-w-md rounded-2xl border border-line bg-white/70 px-5 py-3 text-center">
+            <summary className="cursor-pointer text-sm text-ink-dim">
+              Where to send gifts
+            </summary>
+            <address className="not-italic mt-3 text-sm leading-relaxed text-ink">
+              {addressLines(shipping).map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            </address>
+            {shipping.arriveBy && (
+              <p className="mt-2 text-xs text-ink-dim">
+                Please aim for it to arrive by {shipping.arriveBy}.
+              </p>
+            )}
+          </details>
+        )}
+
+        <GiftGrid gifts={gifts} guestId={guestId} token={token} shipping={shipping} />
 
         <p className="mx-auto mt-16 max-w-xl text-center text-sm text-ink-dim">
           Prices are approximate and change often &mdash; the shop&rsquo;s price is the real one.

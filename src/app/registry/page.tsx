@@ -14,6 +14,9 @@ export const metadata: Metadata = {
  * claiming needs a personal invitation, so the page offers it read-only.
  */
 export default async function PublicRegistry() {
+  // No address is read here at all — it cannot leak into a public page's HTML.
   const gifts = await listGifts();
-  return <RegistryPage gifts={gifts} guestId={null} guestName={null} token={null} />;
+  return (
+    <RegistryPage gifts={gifts} guestId={null} guestName={null} token={null} shipping={null} />
+  );
 }

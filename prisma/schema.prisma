@@ -54,7 +54,20 @@ model GiftClaim {
   guestId     String?
   guest       Guest?   @relation(fields: [guestId], references: [id], onDelete: SetNull)
   claimedName String? // for a claim made without an invite link
+  /// How the gift is reaching Julie & Robert: null (not yet said), "SHIP" or
+  /// "BRING". Lets them know what to expect by post and what arrives on the day.
+  delivery    String?
   claimedAt   DateTime @default(now())
+}
+
+/// Small key/value store for things the couple edits themselves and that must
+/// not live in the repository — currently their shipping address. Deliberately
+/// not typed columns: these are a handful of free-text settings, and a table per
+/// setting would be worse.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 model ReminderLog {

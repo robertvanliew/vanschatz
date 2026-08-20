@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { formatPrice, placeholderInitials, type GiftView } from "@/lib/registry";
+import DeliveryPanel from "./DeliveryPanel";
+import { isDelivery, type Delivery, type Shipping } from "@/lib/shipping";
 
 /**
  * One product card, in the shape people now expect from a shopping result:
@@ -45,8 +47,10 @@ export default function GiftCard({
   canClaim,
   pending,
   error,
+  shipping,
   onClaim,
   onUnclaim,
+  onDelivery,
 }: {
   gift: GiftView;
   claimed: boolean;
@@ -55,8 +59,11 @@ export default function GiftCard({
   canClaim: boolean;
   pending: boolean;
   error: string | null;
+  /** Null on the public registry, where the address is never sent. */
+  shipping: Shipping | null;
   onClaim: () => void;
   onUnclaim: () => void;
+  onDelivery: (choice: Delivery) => void;
 }) {
   const [loaded, setLoaded] = useState(false);
   const [broken, setBroken] = useState(false);
@@ -158,6 +165,15 @@ export default function GiftCard({
             </span>
           )}
         </div>
+
+        {mine && (
+          <DeliveryPanel
+            shipping={shipping}
+            delivery={isDelivery(gift.claim?.delivery) ? gift.claim.delivery : null}
+            pending={pending}
+            onChoose={onDelivery}
+          />
+        )}
 
         {error && (
           <p role="status" className="mt-2 text-center text-xs text-[#a8425f]">

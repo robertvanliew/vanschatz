@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { canClaim, canUnclaim } from "@/lib/registry";
+import { isDelivery } from "@/lib/shipping";
 import { revalidatePath } from "next/cache";
 
 export type ClaimResult = { ok: boolean; error?: string };
@@ -70,6 +71,35 @@ export async function unclaimGift(token: string, giftId: string): Promise<ClaimR
     where: { giftId, guestId: guest.id },
   });
   if (count === 0) return { ok: false, error: "That claim is no longer yours." };
+
+  revalidateRegistry(token);
+  return { ok: true };
+}
+
+/**
+ * Record whether a guest is posting their gift or bringing it on the day.
+ *
+ * Only the guest holding the claim may set this, and the update is scoped by
+ * guestId so a claim that changed hands in between is not overwritten. Guests
+ * change their minds, so this can be called again.
+ */
+export async function setDelivery(
+  token: string,
+  giftId: string,
+  delivery: string
+): Promise<ClaimResult> {
+  if (!isDelivery(delivery)) return { ok: false, error: "That isn't a delivery option." };
+
+  const guest = await db.guest.findUnique({ where: { token } });
+  if (!guest) return { ok: false, error: "We couldn't find your invitation." };
+
+  const { count } = await db.giftClaim.updateMany({
+    where: { giftId, guestId: guest.id },
+    data: { delivery },
+  });
+  if (count === 0) {
+    return { ok: false, error: "Claim this gift first, then tell us how it's reaching us." };
+  }
 
   revalidateRegistry(token);
   return { ok: true };

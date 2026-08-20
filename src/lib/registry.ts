@@ -9,6 +9,8 @@ export type GiftClaimView = {
   /** Null when the claim was made without an invite link. */
   guestId: string | null;
   claimedName: string | null;
+  /** "SHIP" | "BRING" | null — how the claimant is getting it to the couple. */
+  delivery: string | null;
 };
 
 export type GiftView = {
