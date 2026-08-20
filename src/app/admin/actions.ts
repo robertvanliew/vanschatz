@@ -141,6 +141,15 @@ export async function addGiftAction(formData: FormData): Promise<void> {
   const url = String(formData.get("url") ?? "").trim();
   if (!title || !url) return;
 
+  // A double-submitted form once added the same steamer three times, 0.2s
+  // apart. The same product link twice is never intended on a registry, so the
+  // link is the guard — this also covers adding a duplicate weeks later by
+  // accident, not just a stuttering button.
+  if (await db.gift.findFirst({ where: { url } })) {
+    revalidatePath("/admin");
+    return;
+  }
+
   // Keep slugs unique without surprising the couple with an error page.
   const base = slugify(title);
   let slug = base;
