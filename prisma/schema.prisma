@@ -88,41 +88,27 @@ model ReminderLog {
   @@unique([guestId, scheduleKey, channel])
 }
 
-/// A named piece of the honeymoon guests can put money toward — "dinner for
-/// two", "a night's stay". Cash is a hard thing to ask for; a specific thing
-/// with a price is an easy yes, and it gives the couple something particular to
-/// say thank you for.
-model FundTile {
-  id            String         @id @default(cuid())
-  slug          String         @unique
-  title         String
-  note          String?
-  targetCents   Int
-  /// Buttons offered on the card, e.g. [2500, 5000, 10000]. Always plus "other".
-  suggested     Int[]
-  sortOrder     Int            @default(0)
-  active        Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  contributions Contribution[]
-}
-
-/// One guest saying they have sent money toward a tile.
+/// One person saying they have sent money toward the honeymoon.
 ///
 /// This records intent, not a verified payment: money moves through PayPal,
-/// which tells us nothing. `confirmed` is the couple ticking it off against
-/// their own PayPal history. The public bar counts every row, because a bar
-/// that only moves after manual confirmation kills the momentum that makes
-/// this work at all.
+/// which tells this site nothing. `confirmed` is the couple ticking it off
+/// against their own PayPal history.
+///
+/// There are deliberately no goals or targets. An amount to aim at caps how much
+/// feels appropriate to give, and a progress bar sitting at zero reads as "no
+/// one has given" rather than "help us get there". The public page shows the
+/// notes instead, which only ever look better as more arrive.
 model Contribution {
   id          String   @id @default(cuid())
-  tileId      String
-  tile        FundTile @relation(fields: [tileId], references: [id], onDelete: Cascade)
   guestId     String?
   guest       Guest?   @relation(fields: [guestId], references: [id], onDelete: SetNull)
   /// Typed name, for someone giving without a personal invite link.
   givenName   String?
   amountCents Int
   message     String?
+  /// Set by the couple to keep a note off the public page without losing the
+  /// record of who gave.
+  noteHidden  Boolean  @default(false)
   confirmed   Boolean  @default(false)
   createdAt   DateTime @default(now())
 }

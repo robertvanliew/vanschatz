@@ -7,18 +7,16 @@ import { revalidatePath } from "next/cache";
 export type GiveResult = { ok: boolean; error?: string };
 
 /**
- * Record that a guest has sent money toward a tile.
+ * Record that someone has sent money toward the honeymoon.
  *
- * This is the honour system by design: PayPal tells this site nothing, so the
- * alternative to trusting the guest is not trusting them and having no bar at
- * all. The couple reconciles in admin, where each row can be confirmed or
- * removed.
+ * Honour system by design: PayPal tells this site nothing, so the alternative to
+ * trusting the guest is having no record at all. The couple reconciles on
+ * /admin, where each row can be confirmed, hidden or removed.
  *
- * A name is required when there is no invite token — an anonymous row is one
- * the couple can never thank anyone for.
+ * A name is required without an invite token — an anonymous row is one the
+ * couple can never thank anyone for.
  */
 export async function recordContribution(input: {
-  tileId: string;
   amount: string;
   token: string | null;
   name: string;
@@ -26,9 +24,6 @@ export async function recordContribution(input: {
 }): Promise<GiveResult> {
   const parsed = parseAmount(input.amount);
   if (!parsed.ok) return { ok: false, error: parsed.error };
-
-  const tile = await db.fundTile.findUnique({ where: { id: input.tileId } });
-  if (!tile || !tile.active) return { ok: false, error: "That's no longer on the list." };
 
   let guestId: string | null = null;
   let givenName: string | null = null;
@@ -45,11 +40,11 @@ export async function recordContribution(input: {
 
   await db.contribution.create({
     data: {
-      tileId: tile.id,
       guestId,
       givenName,
       amountCents: parsed.cents,
-      message: (input.message ?? "").trim() || null,
+      // Trimmed and capped: this is shown publicly under the donate card.
+      message: (input.message ?? "").trim().slice(0, 400) || null,
     },
   });
 

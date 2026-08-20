@@ -1,30 +1,29 @@
 /**
- * The honeymoon fund: named pieces of the trip guests can put money toward.
+ * The honeymoon fund.
  *
  * No money moves through this site. Guests are sent to PayPal and then say they
  * have sent it, exactly as they say they have bought a gift. These functions
  * hold the arithmetic and the link building so both can be tested without a
  * database or a browser.
+ *
+ * There are deliberately no goals. A target caps how much feels appropriate to
+ * give — someone minded to give $300 hesitates at a $45 goal — and a progress
+ * bar at zero reads as "nobody has given". Guests' notes carry the social proof
+ * instead, and those only ever look better as more arrive.
  */
 
 export const FUND_KEYS = {
   payLink: "fund.payLink",
   heading: "fund.heading",
   blurb: "fund.blurb",
+  amounts: "fund.amounts",
 } as const;
 
 /** Largest single contribution we will record. Guards against a typo'd 500000. */
 export const MAX_CONTRIBUTION_CENTS = 2_000_000; // $20,000
 
-export type TileView = {
-  id: string;
-  slug: string;
-  title: string;
-  note: string | null;
-  targetCents: number;
-  suggested: number[];
-  raisedCents: number;
-};
+/** Offered when the couple hasn't set their own. */
+export const DEFAULT_AMOUNTS_CENTS = [5000, 10000, 15000, 25000];
 
 /** "$45", "$1,200", "$66.99" — cents dropped when they are zero. */
 export function money(cents: number): string {
@@ -33,30 +32,6 @@ export function money(cents: number): string {
   return dollars % 1 === 0
     ? `$${dollars.toLocaleString("en-US")}`
     : `$${dollars.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-export type Progress = {
-  raisedCents: number;
-  targetCents: number;
-  /** 0–100, clamped. A tile past its target reads 100, never 140. */
-  percent: number;
-  fullyFunded: boolean;
-};
-
-export function progress(raisedCents: number, targetCents: number): Progress {
-  const raised = Math.max(0, Math.round(raisedCents || 0));
-  const target = Math.max(0, Math.round(targetCents || 0));
-  // A target of zero would divide by zero; treat it as already met.
-  const percent = target <= 0 ? 100 : Math.min(100, Math.round((raised / target) * 100));
-  return { raisedCents: raised, targetCents: target, percent, fullyFunded: target > 0 && raised >= target };
-}
-
-/** The whole trip's progress: every tile added together. */
-export function fundTotals(tiles: Pick<TileView, "raisedCents" | "targetCents">[]): Progress {
-  return progress(
-    tiles.reduce((sum, t) => sum + (t.raisedCents || 0), 0),
-    tiles.reduce((sum, t) => sum + (t.targetCents || 0), 0)
-  );
 }
 
 export type AmountResult = { ok: true; cents: number } | { ok: false; error: string };
@@ -72,18 +47,36 @@ export function parseAmount(raw: string): AmountResult {
 
   const cents = Math.round(value * 100);
   if (cents > MAX_CONTRIBUTION_CENTS) {
-    return { ok: false, error: `That's wonderfully generous — please get in touch for anything over ${money(MAX_CONTRIBUTION_CENTS)}.` };
+    return {
+      ok: false,
+      error: `That's wonderfully generous — please get in touch for anything over ${money(MAX_CONTRIBUTION_CENTS)}.`,
+    };
   }
   return { ok: true, cents };
 }
 
 /**
- * Where "Give this" sends the guest.
+ * The quick-pick buttons, from a string the couple types as "50, 100, 250".
+ * Falls back to the defaults rather than leaving a guest with no shortcut.
+ */
+export function parseAmounts(raw: string | null | undefined): number[] {
+  const parts = (raw ?? "")
+    .split(/[,\s]+/)
+    .map((part) => parseAmount(part))
+    .filter((r): r is { ok: true; cents: number } => r.ok)
+    .map((r) => r.cents);
+
+  const unique = [...new Set(parts)].sort((a, b) => a - b).slice(0, 5);
+  return unique.length > 0 ? unique : DEFAULT_AMOUNTS_CENTS;
+}
+
+/**
+ * Where "Donate" sends the guest.
  *
  * A paypal.me link takes the amount as a path segment, so the guest arrives with
  * the number already filled in. Anything else — a Donate button URL, a business
- * profile — is opened untouched, because appending a segment to it would break
- * it. Whatever PayPal hands the couple therefore works.
+ * profile — is opened untouched, because appending a segment would break it.
+ * Whatever PayPal hands the couple therefore works.
  */
 export function payLink(base: string | null | undefined, amountCents: number): string | null {
   const url = (base ?? "").trim();
@@ -97,4 +90,36 @@ export function payLink(base: string | null | undefined, amountCents: number): s
   const dollars = cents / 100;
   const amount = dollars % 1 === 0 ? String(dollars) : dollars.toFixed(2);
   return `${url.replace(/\/+$/, "")}/${amount}`;
+}
+
+export type PublicNote = {
+  id: string;
+  name: string;
+  message: string;
+};
+
+/**
+ * The notes shown under the donate card.
+ *
+ * Amounts are never included: publishing them invites comparison, and someone
+ * giving $25 beside a $250 should not feel it. A contribution without a message
+ * is left out entirely rather than shown as a bare name, which would read as a
+ * public list of who has paid.
+ */
+export function publicNotes(
+  contributions: {
+    id: string;
+    message: string | null;
+    noteHidden: boolean;
+    givenName: string | null;
+    guest: { name: string } | null;
+  }[]
+): PublicNote[] {
+  return contributions
+    .filter((c) => !c.noteHidden && (c.message ?? "").trim().length > 0)
+    .map((c) => ({
+      id: c.id,
+      name: (c.guest?.name ?? c.givenName ?? "").trim() || "A friend",
+      message: (c.message ?? "").trim(),
+    }));
 }

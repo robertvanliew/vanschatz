@@ -66,14 +66,9 @@ export default async function AdminDashboard({
   });
   const settings = await readSettings();
   const shipping = toShipping(settings);
-  const tiles = await db.fundTile.findMany({
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-    include: {
-      contributions: {
-        include: { guest: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
-      },
-    },
+  const contributions = await db.contribution.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { guest: { select: { name: true } } },
   });
   const claims = gifts.map((g) => g.claim).filter((c) => c !== null);
   const shippingCount = claims.filter((c) => c.delivery === "SHIP").length;
@@ -502,7 +497,7 @@ export default async function AdminDashboard({
       </section>
 
       <FundAdmin
-        tiles={tiles}
+        contributions={contributions}
         settings={settings}
         saved={saved}
         card={card}

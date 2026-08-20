@@ -1,10 +1,11 @@
 import { describe, expect, test } from "vitest";
 import {
-  fundTotals,
+  DEFAULT_AMOUNTS_CENTS,
   money,
   parseAmount,
+  parseAmounts,
   payLink,
-  progress,
+  publicNotes,
   MAX_CONTRIBUTION_CENTS,
 } from "@/lib/fund";
 
@@ -19,47 +20,6 @@ describe("money", () => {
   test("nonsense renders as zero rather than NaN", () => {
     expect(money(Number.NaN)).toBe("$0");
     expect(money(-500)).toBe("$0");
-  });
-});
-
-describe("progress", () => {
-  test("part way", () => {
-    expect(progress(4500, 18000)).toMatchObject({ percent: 25, fullyFunded: false });
-  });
-  test("exactly met", () => {
-    expect(progress(18000, 18000)).toMatchObject({ percent: 100, fullyFunded: true });
-  });
-  test("over-funded clamps at 100 rather than reading 140", () => {
-    const p = progress(25000, 18000);
-    expect(p.percent).toBe(100);
-    expect(p.fullyFunded).toBe(true);
-    expect(p.raisedCents).toBe(25000); // the real total is still reported
-  });
-  test("nothing given yet", () => {
-    expect(progress(0, 18000)).toMatchObject({ percent: 0, fullyFunded: false });
-  });
-  test("a zero target does not divide by zero", () => {
-    expect(progress(0, 0).percent).toBe(100);
-    expect(progress(0, 0).fullyFunded).toBe(false);
-  });
-  test("negative input is treated as zero", () => {
-    expect(progress(-100, 18000).percent).toBe(0);
-  });
-});
-
-describe("fundTotals", () => {
-  test("adds every tile together", () => {
-    const t = fundTotals([
-      { raisedCents: 4500, targetCents: 18000 },
-      { raisedCents: 9000, targetCents: 9000 },
-    ]);
-    expect(t.raisedCents).toBe(13500);
-    expect(t.targetCents).toBe(27000);
-    expect(t.percent).toBe(50);
-  });
-  test("an empty fund does not divide by zero", () => {
-    expect(fundTotals([]).percent).toBe(100);
-    expect(fundTotals([]).raisedCents).toBe(0);
   });
 });
 
@@ -112,5 +72,66 @@ describe("payLink", () => {
   });
   test("a zero amount falls back to the bare link", () => {
     expect(payLink("https://paypal.me/jr", 0)).toBe("https://paypal.me/jr");
+  });
+});
+
+describe("parseAmounts", () => {
+  test("reads the couple's quick-pick buttons", () => {
+    expect(parseAmounts("50, 100, 250")).toEqual([5000, 10000, 25000]);
+  });
+  test("sorts them and drops repeats", () => {
+    expect(parseAmounts("250, 50, 100, 50")).toEqual([5000, 10000, 25000]);
+  });
+  test("ignores junk between the numbers", () => {
+    expect(parseAmounts("$50 / lots / 100")).toEqual([5000, 10000]);
+  });
+  test("falls back rather than leaving a guest with no shortcut", () => {
+    expect(parseAmounts("")).toEqual(DEFAULT_AMOUNTS_CENTS);
+    expect(parseAmounts(null)).toEqual(DEFAULT_AMOUNTS_CENTS);
+    expect(parseAmounts("nonsense")).toEqual(DEFAULT_AMOUNTS_CENTS);
+  });
+  test("caps how many buttons are shown", () => {
+    expect(parseAmounts("10,20,30,40,50,60,70").length).toBe(5);
+  });
+});
+
+describe("publicNotes", () => {
+  const rows = [
+    { id: "1", message: "Congratulations!", noteHidden: false, givenName: null, guest: { name: "Aunt Carol" } },
+    { id: "2", message: null, noteHidden: false, givenName: "Quiet Giver", guest: null },
+    { id: "3", message: "   ", noteHidden: false, givenName: "Spacey", guest: null },
+    { id: "4", message: "Hidden one", noteHidden: true, givenName: "Someone", guest: null },
+    { id: "5", message: "  All our love  ", noteHidden: false, givenName: "The Delgados", guest: null },
+  ];
+
+  test("shows notes with the giver's name", () => {
+    expect(publicNotes(rows).map((n) => n.name)).toEqual(["Aunt Carol", "The Delgados"]);
+  });
+
+  test("a contribution without a message is left out entirely", () => {
+    // Otherwise the page becomes a public list of who has paid.
+    expect(publicNotes(rows).find((n) => n.name === "Quiet Giver")).toBeUndefined();
+    expect(publicNotes(rows).find((n) => n.name === "Spacey")).toBeUndefined();
+  });
+
+  test("a note the couple hid does not appear", () => {
+    expect(publicNotes(rows).find((n) => n.message === "Hidden one")).toBeUndefined();
+  });
+
+  test("messages are trimmed", () => {
+    expect(publicNotes(rows)[1].message).toBe("All our love");
+  });
+
+  test("no amount is ever exposed", () => {
+    for (const note of publicNotes(rows)) {
+      expect(Object.keys(note).sort()).toEqual(["id", "message", "name"]);
+    }
+  });
+
+  test("a nameless giver is not left blank", () => {
+    const [n] = publicNotes([
+      { id: "x", message: "hi", noteHidden: false, givenName: null, guest: null },
+    ]);
+    expect(n.name).toBe("A friend");
   });
 });
