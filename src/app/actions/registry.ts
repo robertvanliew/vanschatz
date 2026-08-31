@@ -1,7 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { canClaim, canUnclaim } from "@/lib/registry";
+import { canClaim, canClaimNamed, canUnclaim } from "@/lib/registry";
+import { findGuestMatch } from "@/lib/rsvp-matching";
 import { isDelivery } from "@/lib/shipping";
 import { revalidatePath } from "next/cache";
 
@@ -102,5 +103,75 @@ export async function setDelivery(
   }
 
   revalidateRegistry(token);
+  return { ok: true };
+}
+
+/**
+ * Claim a gift without a personal invite link.
+ *
+ * For guests who declined but still want to send something, and for anyone whose
+ * invitation was on paper. The typed name is matched against the guest list, so
+ * a claim by someone already invited attaches to their row rather than floating
+ * loose; an unmatched name is recorded as typed. No guest is created — claiming
+ * a gift is not an RSVP.
+ *
+ * Returns the claim's id. The browser keeps it so the same person can undo, and
+ * nobody else can: the id is a cuid, so it cannot be guessed from the page.
+ */
+export async function claimGiftByName(
+  giftId: string,
+  name: string
+): Promise<ClaimResult & { claimId?: string }> {
+  const trimmed = (name ?? "").trim();
+
+  const gift = await db.gift.findUnique({
+    where: { id: giftId },
+    include: { claim: true },
+  });
+  if (!gift || !gift.active) {
+    return { ok: false, error: "That gift is no longer on the registry." };
+  }
+
+  const decision = canClaimNamed(gift, trimmed);
+  if (!decision.ok) return { ok: false, error: decision.reason };
+
+  // Attach to an existing guest when the name clearly belongs to one, so the
+  // couple's thank-you list stays accurate. Ambiguity matches nobody by design.
+  const guests = await db.guest.findMany({ select: { id: true, name: true, email: true } });
+  const match = findGuestMatch(guests, { name: trimmed });
+
+  try {
+    const claim = await db.giftClaim.create({
+      data: { giftId: gift.id, guestId: match?.id ?? null, claimedName: trimmed },
+    });
+    revalidatePath("/registry");
+    revalidatePath("/admin");
+    return { ok: true, claimId: claim.id };
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "code" in err && err.code === UNIQUE_VIOLATION) {
+      return { ok: false, error: "Someone just claimed this one." };
+    }
+    throw err;
+  }
+}
+
+/**
+ * Release a claim made without an invite link.
+ *
+ * Authorised by the claim's own id, which only the browser that made it holds.
+ * Scoping the delete by both ids means a stale id cannot release a gift that has
+ * since been claimed by somebody else.
+ */
+export async function unclaimGiftByClaimId(
+  giftId: string,
+  claimId: string
+): Promise<ClaimResult> {
+  if (!claimId) return { ok: false, error: "That claim isn't yours to release." };
+
+  const { count } = await db.giftClaim.deleteMany({ where: { id: claimId, giftId } });
+  if (count === 0) return { ok: false, error: "That claim isn't yours to release." };
+
+  revalidatePath("/registry");
+  revalidatePath("/admin");
   return { ok: true };
 }

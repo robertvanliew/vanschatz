@@ -51,6 +51,7 @@ export default function GiftCard({
   onClaim,
   onUnclaim,
   onDelivery,
+  onClaimNamed,
 }: {
   gift: GiftView;
   claimed: boolean;
@@ -64,7 +65,11 @@ export default function GiftCard({
   onClaim: () => void;
   onUnclaim: () => void;
   onDelivery: (choice: Delivery) => void;
+  /** Claim without an invite link, identifying by name. */
+  onClaimNamed: (name: string) => void;
 }) {
+  const [naming, setNaming] = useState(false);
+  const [name, setName] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [broken, setBroken] = useState(false);
   const price = formatPrice(gift.priceCents);
@@ -159,10 +164,42 @@ export default function GiftCard({
             >
               {pending ? "Just a moment…" : "I'm getting this"}
             </button>
+          ) : naming ? (
+            <div className="rounded-2xl bg-[#faf8f4] p-3">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") onClaimNamed(name);
+                }}
+                className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-[#8a6db1]"
+              />
+              <button
+                type="button"
+                onClick={() => onClaimNamed(name)}
+                disabled={pending}
+                className="mt-2 w-full rounded-full bg-gradient-to-r from-[#6b4f96] to-[#8a6db1] px-4 py-2.5 text-sm font-medium text-white transition-[filter] hover:brightness-110 disabled:opacity-60"
+              >
+                {pending ? "Just a moment…" : "Confirm"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setNaming(false)}
+                className="mt-1.5 w-full text-center text-xs text-ink-dim hover:text-ink"
+              >
+                Cancel
+              </button>
+            </div>
           ) : (
-            <span className="inline-flex items-center justify-center rounded-full bg-[#f3eee7] px-4 py-2.5 text-center text-xs text-ink-dim">
-              Open your invitation link to claim
-            </span>
+            <button
+              type="button"
+              onClick={() => setNaming(true)}
+              className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#6b4f96] to-[#8a6db1] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-[filter,transform] hover:brightness-110 active:scale-[0.98]"
+            >
+              I&rsquo;m getting this
+            </button>
           )}
         </div>
 

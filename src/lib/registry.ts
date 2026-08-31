@@ -78,6 +78,28 @@ export function canClaim(
   return { ok: true };
 }
 
+/**
+ * May someone without an invite link claim this gift?
+ *
+ * Opened deliberately: guests who declined, and people who only ever had a
+ * paper invitation, still want to send something, and requiring a personal link
+ * shut all of them out. The cost is that the registry URL is public, so a
+ * stranger could in principle mark a gift taken — the couple can release any
+ * claim from /admin, and a name-only claim is badged there so an odd one stands
+ * out.
+ */
+export function canClaimNamed(
+  gift: Pick<GiftView, "claim"> | null,
+  name: string
+): ClaimDecision {
+  if (!gift) return { ok: false, reason: "That gift is no longer on the registry." };
+  if ((name ?? "").trim().length < 2) {
+    return { ok: false, reason: "Please add your name so we know who to thank." };
+  }
+  if (gift.claim) return { ok: false, reason: "Someone just claimed this one." };
+  return { ok: true };
+}
+
 /** Only the guest holding a claim may release it. */
 export function canUnclaim(
   gift: Pick<GiftView, "claim"> | null,

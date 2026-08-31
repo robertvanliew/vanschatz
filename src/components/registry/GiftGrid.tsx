@@ -1,9 +1,15 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import GiftCard from "./GiftCard";
-import { claimGift, setDelivery, unclaimGift } from "@/app/actions/registry";
+import {
+  claimGift,
+  claimGiftByName,
+  setDelivery,
+  unclaimGift,
+  unclaimGiftByClaimId,
+} from "@/app/actions/registry";
 import type { Delivery, Shipping } from "@/lib/shipping";
 import {
   claimSummary,
@@ -44,6 +50,74 @@ export default function GiftGrid({
    * says why, rather than leaving a guest believing they claimed something.
    */
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
+
+  /**
+   * Claims this browser made without an invite link, as giftId -> claimId.
+   *
+   * Kept in localStorage because there is no token to identify the claimer on a
+   * later visit. It is what lets them undo a mis-tap, and only them: the server
+   * checks the id, which is unguessable and never rendered on the page.
+   */
+  const MINE_KEY = "vanschatz.myGiftClaims";
+  const [myClaims, setMyClaims] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(MINE_KEY);
+      if (raw) setMyClaims(JSON.parse(raw));
+    } catch {
+      // Private browsing or blocked storage: undo is simply unavailable.
+    }
+  }, []);
+
+  function rememberClaim(giftId: string, claimId: string | null) {
+    setMyClaims((prev) => {
+      const next = { ...prev };
+      if (claimId) next[giftId] = claimId;
+      else delete next[giftId];
+      try {
+        window.localStorage.setItem(MINE_KEY, JSON.stringify(next));
+      } catch {
+        // Not fatal — the claim itself is already recorded on the server.
+      }
+      return next;
+    });
+  }
+
+  function claimNamed(giftId: string, name: string) {
+    setPendingId(giftId);
+    setErrors((e) => ({ ...e, [giftId]: "" }));
+    startTransition(async () => {
+      const result = await claimGiftByName(giftId, name);
+      if (result.ok && result.claimId) {
+        rememberClaim(giftId, result.claimId);
+        setOptimistic((o) => ({ ...o, [giftId]: true }));
+      } else {
+        setErrors((e) => ({ ...e, [giftId]: result.error ?? "That didn't work." }));
+      }
+      setPendingId(null);
+    });
+  }
+
+  function releaseNamed(giftId: string) {
+    const claimId = myClaims[giftId];
+    if (!claimId) return;
+    setPendingId(giftId);
+    startTransition(async () => {
+      const result = await unclaimGiftByClaimId(giftId, claimId);
+      if (result.ok) {
+        rememberClaim(giftId, null);
+        setOptimistic((o) => {
+          const next = { ...o };
+          delete next[giftId];
+          return next;
+        });
+      } else {
+        setErrors((e) => ({ ...e, [giftId]: result.error ?? "That didn't work." }));
+      }
+      setPendingId(null);
+    });
+  }
 
   const view = useMemo(
     () =>
@@ -139,13 +213,16 @@ export default function GiftGrid({
               key={gift.id}
               gift={gift}
               claimed={isClaimed(gift)}
-              mine={isClaimedByMe(gift, guestId)}
+              mine={isClaimedByMe(gift, guestId) || Boolean(myClaims[gift.id])}
               canClaim={Boolean(token)}
               pending={pendingId === gift.id}
               error={errors[gift.id] || null}
               shipping={shipping}
               onClaim={() => run(gift.id, true)}
-              onUnclaim={() => run(gift.id, false)}
+              onUnclaim={() =>
+                token ? run(gift.id, false) : releaseNamed(gift.id)
+              }
+              onClaimNamed={(name) => claimNamed(gift.id, name)}
               onDelivery={(choice) => chooseDelivery(gift.id, choice)}
             />
           ))}
