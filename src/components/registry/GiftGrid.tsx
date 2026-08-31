@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import GiftCard from "./GiftCard";
 import {
@@ -11,6 +11,13 @@ import {
   unclaimGiftByClaimId,
 } from "@/app/actions/registry";
 import type { Delivery, Shipping } from "@/lib/shipping";
+import {
+  myClaimsServerSnapshot,
+  myClaimsSnapshot,
+  parseMyClaims,
+  rememberClaim,
+  subscribeMyClaims,
+} from "@/lib/my-claims";
 import {
   claimSummary,
   filterGifts,
@@ -51,38 +58,11 @@ export default function GiftGrid({
    */
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
 
-  /**
-   * Claims this browser made without an invite link, as giftId -> claimId.
-   *
-   * Kept in localStorage because there is no token to identify the claimer on a
-   * later visit. It is what lets them undo a mis-tap, and only them: the server
-   * checks the id, which is unguessable and never rendered on the page.
-   */
-  const MINE_KEY = "vanschatz.myGiftClaims";
-  const [myClaims, setMyClaims] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(MINE_KEY);
-      if (raw) setMyClaims(JSON.parse(raw));
-    } catch {
-      // Private browsing or blocked storage: undo is simply unavailable.
-    }
-  }, []);
-
-  function rememberClaim(giftId: string, claimId: string | null) {
-    setMyClaims((prev) => {
-      const next = { ...prev };
-      if (claimId) next[giftId] = claimId;
-      else delete next[giftId];
-      try {
-        window.localStorage.setItem(MINE_KEY, JSON.stringify(next));
-      } catch {
-        // Not fatal — the claim itself is already recorded on the server.
-      }
-      return next;
-    });
-  }
+  // Claims made from this browser without an invite link. Read through an
+  // external store so it renders correctly on the first paint.
+  const myClaims = parseMyClaims(
+    useSyncExternalStore(subscribeMyClaims, myClaimsSnapshot, myClaimsServerSnapshot)
+  );
 
   function claimNamed(giftId: string, name: string) {
     setPendingId(giftId);
