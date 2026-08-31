@@ -25,6 +25,7 @@ import {
 } from "@/app/admin/actions";
 import { CopyLinkButton, ConfirmButton } from "@/app/admin/AdminUi";
 import FundAdmin from "@/app/admin/FundAdmin";
+import RegistryAnnouncement from "@/app/admin/RegistryAnnouncement";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +60,10 @@ export default async function AdminDashboard({
   if (!(await isAdmin())) redirect("/admin/login");
   const { saved } = await searchParams;
 
-  const guests = await db.guest.findMany({ orderBy: { createdAt: "asc" } });
+  const guests = await db.guest.findMany({
+    orderBy: { createdAt: "asc" },
+    include: { reminders: true },
+  });
   const gifts = await db.gift.findMany({
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     include: { claim: { include: { guest: true } } },
@@ -495,6 +499,14 @@ export default async function AdminDashboard({
           ))}
         </ul>
       </section>
+
+      <RegistryAnnouncement
+        guests={guests}
+        saved={saved}
+        card={card}
+        primaryBtn={primaryBtn}
+        ghostBtn={ghostBtn}
+      />
 
       <FundAdmin
         contributions={contributions}

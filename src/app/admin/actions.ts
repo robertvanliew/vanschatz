@@ -8,7 +8,12 @@ import { db } from "@/lib/db";
 import { makeToken } from "@/lib/tokens";
 import { validateRsvp } from "@/lib/rsvp";
 import { runManualReminders, runScheduledReminders } from "@/lib/reminders";
-import { sendInviteToGuest, sendAllInvites } from "@/lib/invites";
+import {
+  sendInviteToGuest,
+  sendAllInvites,
+  sendRegistryTest,
+  sendRegistryAnnouncement,
+} from "@/lib/invites";
 import { writeSettings } from "@/lib/settings";
 import { SHIPPING_KEYS } from "@/lib/shipping";
 import { FUND_KEYS } from "@/lib/fund";
@@ -88,6 +93,30 @@ export async function sendAllInvitesAction(): Promise<void> {
   await requireAdmin();
   await sendAllInvites();
   revalidatePath("/admin");
+}
+
+/* ---------------------------------------------------- registry announcement */
+
+/**
+ * Send the announcement to one guest — the couple themselves — so they see the
+ * real email before 28 other people do. Ignores send-once protection, since a
+ * test they can only run once is not a test.
+ */
+export async function testRegistryEmailAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+  await sendRegistryTest(id);
+  revalidatePath("/admin");
+  redirect("/admin?saved=registry-test");
+}
+
+/** Send the announcement to everyone who should get it. Not reversible. */
+export async function sendRegistryAnnouncementAction(): Promise<void> {
+  await requireAdmin();
+  await sendRegistryAnnouncement();
+  revalidatePath("/admin");
+  redirect("/admin?saved=registry-sent");
 }
 
 /* ---------------------------------------------------------------- shipping */
