@@ -17,6 +17,7 @@ import {
 import { writeSettings } from "@/lib/settings";
 import { SHIPPING_KEYS } from "@/lib/shipping";
 import { FUND_KEYS } from "@/lib/fund";
+import { APPROVED_SOURCE, UNAPPROVED_SOURCE } from "@/lib/gift-guests";
 
 function sessionValue(): string {
   return createHash("sha256").update(process.env.ADMIN_PASSWORD ?? "").digest("hex");
@@ -117,6 +118,20 @@ export async function sendRegistryAnnouncementAction(): Promise<void> {
   await sendRegistryAnnouncement();
   revalidatePath("/admin");
   redirect("/admin?saved=registry-sent");
+}
+
+/**
+ * Approve a guest who added themselves through the website RSVP form, so they
+ * can claim gifts by email and see the shipping address. Until then they can't:
+ * anyone could otherwise RSVP with a made-up email and use it to see the address.
+ */
+export async function approveGuestAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await db.guest.updateMany({
+    where: { id: String(formData.get("id")), source: UNAPPROVED_SOURCE },
+    data: { source: APPROVED_SOURCE },
+  });
+  revalidatePath("/admin");
 }
 
 /* ---------------------------------------------------------------- shipping */

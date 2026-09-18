@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import GiftCard from "./GiftCard";
 import {
   claimGift,
-  claimGiftByName,
+  claimGiftByEmail,
   revealShippingForClaim,
   setDelivery,
   setDeliveryByClaimId,
@@ -76,11 +76,11 @@ export default function GiftGrid({
     useSyncExternalStore(subscribeMyClaims, myClaimsSnapshot, myClaimsServerSnapshot)
   );
 
-  function claimNamed(giftId: string, name: string) {
+  function claimByEmail(giftId: string, email: string) {
     setPendingId(giftId);
     setErrors((e) => ({ ...e, [giftId]: "" }));
     startTransition(async () => {
-      const result = await claimGiftByName(giftId, name);
+      const result = await claimGiftByEmail(giftId, email);
       if (result.ok && result.claimId) {
         rememberClaim(giftId, result.claimId);
         setOptimistic((o) => ({ ...o, [giftId]: true }));
@@ -253,7 +253,7 @@ export default function GiftGrid({
               onUnclaim={() =>
                 token ? run(gift.id, false) : releaseNamed(gift.id)
               }
-              onClaimNamed={(name) => claimNamed(gift.id, name)}
+              onClaimByEmail={(email) => claimByEmail(gift.id, email)}
               onDelivery={(choice) => chooseDelivery(gift.id, choice)}
             />
           ))}

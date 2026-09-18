@@ -51,7 +51,7 @@ export default function GiftCard({
   onClaim,
   onUnclaim,
   onDelivery,
-  onClaimNamed,
+  onClaimByEmail,
   onReveal,
 }: {
   gift: GiftView;
@@ -66,13 +66,13 @@ export default function GiftCard({
   onClaim: () => void;
   onUnclaim: () => void;
   onDelivery: (choice: Delivery) => void;
-  /** Claim without an invite link, identifying by name. */
-  onClaimNamed: (name: string) => void;
+  /** Claim without an invite link, by the email the guest was invited with. */
+  onClaimByEmail: (email: string) => void;
   /** Present only for a claim this browser made without an invite link. */
   onReveal?: () => void;
 }) {
   const [naming, setNaming] = useState(false);
-  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [broken, setBroken] = useState(false);
   const price = formatPrice(gift.priceCents);
@@ -170,18 +170,25 @@ export default function GiftCard({
           ) : naming ? (
             <div className="rounded-2xl bg-[#faf8f4] p-3">
               <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="The email we invited you with"
+                aria-label="The email we invited you with"
                 autoFocus
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") onClaimNamed(name);
+                  if (e.key === "Enter") onClaimByEmail(email);
                 }}
                 className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-[#8a6db1]"
               />
+              <p className="mt-1.5 text-center text-[11px] leading-relaxed text-ink-dim">
+                So we know it&rsquo;s you &mdash; no invitation link needed.
+              </p>
               <button
                 type="button"
-                onClick={() => onClaimNamed(name)}
+                onClick={() => onClaimByEmail(email)}
                 disabled={pending}
                 className="mt-2 w-full rounded-full bg-gradient-to-r from-[#6b4f96] to-[#8a6db1] px-4 py-2.5 text-sm font-medium text-white transition-[filter] hover:brightness-110 disabled:opacity-60"
               >

@@ -22,6 +22,7 @@ import {
   toggleGiftAction,
   deleteGiftAction,
   releaseClaimAction,
+  approveGuestAction,
 } from "@/app/admin/actions";
 import { CopyLinkButton, ConfirmButton } from "@/app/admin/AdminUi";
 import FundAdmin from "@/app/admin/FundAdmin";
@@ -181,12 +182,24 @@ export default async function AdminDashboard({
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{g.name}</span>
                       {g.source === "website" && (
-                        <span
-                          title="RSVP'd from the website without a personal link — check this isn't a duplicate of someone already on the list"
-                          className="rounded-full border border-[#e6d3ab] bg-[#faf4e6] px-2 py-0.5 text-[10px] tracking-wider text-gold uppercase"
-                        >
-                          self-added
-                        </span>
+                        <>
+                          <span
+                            title="RSVP'd from the website without a personal link. Until you approve them they can't claim gifts or see your address, and they may be a duplicate of someone already on the list."
+                            className="rounded-full border border-[#e6d3ab] bg-[#faf4e6] px-2 py-0.5 text-[10px] tracking-wider text-gold uppercase"
+                          >
+                            self-added
+                          </span>
+                          <form action={approveGuestAction}>
+                            <input type="hidden" name="id" value={g.id} />
+                            <button
+                              type="submit"
+                              title="Let them claim gifts by email and see your address"
+                              className="cursor-pointer rounded-full border border-line bg-white px-2 py-0.5 text-[10px] tracking-wider text-ink-dim uppercase hover:bg-[#f3eee7]"
+                            >
+                              approve
+                            </button>
+                          </form>
+                        </>
                       )}
                     </div>
                     {g.party && (

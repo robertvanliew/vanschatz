@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
   canClaim,
-  canClaimNamed,
   canUnclaim,
   claimSummary,
   filterGifts,
@@ -136,31 +135,5 @@ describe("placeholderInitials", () => {
   test("degrades rather than throwing on empty input", () => {
     expect(placeholderInitials("")).toBe("?");
     expect(placeholderInitials("   ")).toBe("?");
-  });
-});
-
-describe("canClaimNamed", () => {
-  test("someone without an invite link may claim if they say who they are", () => {
-    expect(canClaimNamed(unclaimed, "Aunt Carol")).toEqual({ ok: true });
-  });
-
-  test("a name is required — an anonymous claim can never be thanked", () => {
-    const r = canClaimNamed(unclaimed, " ");
-    expect(r.ok).toBe(false);
-    expect(r.ok === false && r.reason).toMatch(/your name/i);
-  });
-
-  test("one letter is not a name", () => {
-    expect(canClaimNamed(unclaimed, "A").ok).toBe(false);
-  });
-
-  test("an already-claimed gift still cannot be taken twice", () => {
-    const r = canClaimNamed(claimedBy("guest-1"), "Aunt Carol");
-    expect(r.ok).toBe(false);
-    expect(r.ok === false && r.reason).toMatch(/just claimed/i);
-  });
-
-  test("a gift removed from the registry cannot be claimed", () => {
-    expect(canClaimNamed(null, "Aunt Carol").ok).toBe(false);
   });
 });

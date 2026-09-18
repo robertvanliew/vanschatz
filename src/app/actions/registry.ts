@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { canClaim, canClaimNamed, canUnclaim } from "@/lib/registry";
-import { findGuestMatch } from "@/lib/rsvp-matching";
+import { canClaim, canUnclaim } from "@/lib/registry";
+import { eligibleForGifts, findGiftGuest } from "@/lib/gift-guests";
 import { isDelivery, type Shipping } from "@/lib/shipping";
 import { readShipping } from "@/lib/settings";
 import { revalidatePath } from "next/cache";
@@ -108,23 +108,24 @@ export async function setDelivery(
 }
 
 /**
- * Claim a gift without a personal invite link.
+ * Claim a gift without a personal invite link, by the email the guest was
+ * invited with.
  *
- * For guests who declined but still want to send something, and for anyone whose
- * invitation was on paper. The typed name is matched against the guest list, so
- * a claim by someone already invited attaches to their row rather than floating
- * loose; an unmatched name is recorded as typed. No guest is created — claiming
- * a gift is not an RSVP.
+ * Only people on the guest list can claim, so only they can ever see the
+ * shipping address. An email is the check rather than a name because a guest's
+ * name is often known to other people while their email address rarely is.
+ * Self-added guests from the website RSVP form don't count until the couple
+ * approves them in admin (see gift-guests.ts).
  *
- * Returns the claim's id. The browser keeps it so the same person can undo, and
- * nobody else can: the id is a cuid, so it cannot be guessed from the page.
+ * Returns the claim's id. The browser keeps it so the same person can set how
+ * it's arriving, see the address, and undo; the id is a cuid and never appears
+ * on the page. If this guest already holds the claim, from their invite link or
+ * another device, it is handed back rather than refused.
  */
-export async function claimGiftByName(
+export async function claimGiftByEmail(
   giftId: string,
-  name: string
+  email: string
 ): Promise<ClaimResult & { claimId?: string }> {
-  const trimmed = (name ?? "").trim();
-
   const gift = await db.gift.findUnique({
     where: { id: giftId },
     include: { claim: true },
@@ -133,17 +134,29 @@ export async function claimGiftByName(
     return { ok: false, error: "That gift is no longer on the registry." };
   }
 
-  const decision = canClaimNamed(gift, trimmed);
-  if (!decision.ok) return { ok: false, error: decision.reason };
+  const guests = await db.guest.findMany({
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, email: true, source: true },
+  });
+  const guest = findGiftGuest(guests, email);
+  if (!guest) {
+    return {
+      ok: false,
+      error:
+        "We couldn't find that email on our guest list. Try the one we invited you with, use the link from your invitation, or get in touch with us.",
+    };
+  }
 
-  // Attach to an existing guest when the name clearly belongs to one, so the
-  // couple's thank-you list stays accurate. Ambiguity matches nobody by design.
-  const guests = await db.guest.findMany({ select: { id: true, name: true, email: true } });
-  const match = findGuestMatch(guests, { name: trimmed });
+  if (gift.claim && gift.claim.guestId === guest.id) {
+    return { ok: true, claimId: gift.claim.id };
+  }
+
+  const decision = canClaim(gift, guest.id);
+  if (!decision.ok) return { ok: false, error: decision.reason };
 
   try {
     const claim = await db.giftClaim.create({
-      data: { giftId: gift.id, guestId: match?.id ?? null, claimedName: trimmed },
+      data: { giftId: gift.id, guestId: guest.id, claimedName: guest.name },
     });
     revalidatePath("/registry");
     revalidatePath("/admin");
@@ -154,6 +167,20 @@ export async function claimGiftByName(
     }
     throw err;
   }
+}
+
+/**
+ * The claim this browser holds, if it belongs to someone entitled to see the
+ * address: a guest on the list who isn't an unapproved self-added one.
+ */
+async function eligibleClaim(giftId: string, claimId: string) {
+  if (!claimId) return null;
+  const claim = await db.giftClaim.findFirst({
+    where: { id: claimId, giftId },
+    include: { guest: { select: { source: true } } },
+  });
+  if (!claim || !claim.guest || !eligibleForGifts(claim.guest)) return null;
+  return claim;
 }
 
 /**
@@ -178,17 +205,11 @@ export async function unclaimGiftByClaimId(
 }
 
 /**
- * Record how a gift claimed *without* an invite link is reaching the couple.
+ * Record how a gift claimed without an invite link is reaching the couple, and
+ * hand over the address if it's being posted.
  *
- * Authorised by the claim's own id, like unclaimGiftByClaimId: the update is
- * scoped by both ids, so it touches nothing unless this browser really made
- * this claim.
- *
- * When the answer is "post it", the shipping address comes back in the
- * response. That is a deliberate widening of who can see it: Julie and Robert
- * chose it so that people who can't attend, and people who only had a paper
- * invitation, can still send a gift. It is still never rendered into a public
- * page; you have to have claimed a gift to receive it.
+ * Authorised by the claim id this browser kept, and only for claims belonging
+ * to someone on the guest list, so a stranger never receives the address.
  */
 export async function setDeliveryByClaimId(
   giftId: string,
@@ -196,13 +217,10 @@ export async function setDeliveryByClaimId(
   delivery: string
 ): Promise<ClaimResult & { shipping?: Shipping | null }> {
   if (!isDelivery(delivery)) return { ok: false, error: "That isn't a delivery option." };
-  if (!claimId) return { ok: false, error: "That claim isn't yours." };
+  const claim = await eligibleClaim(giftId, claimId);
+  if (!claim) return { ok: false, error: "That claim isn't yours." };
 
-  const { count } = await db.giftClaim.updateMany({
-    where: { id: claimId, giftId },
-    data: { delivery },
-  });
-  if (count === 0) return { ok: false, error: "That claim isn't yours." };
+  await db.giftClaim.update({ where: { id: claim.id }, data: { delivery } });
 
   revalidatePath("/registry");
   revalidatePath("/admin");
@@ -210,15 +228,14 @@ export async function setDeliveryByClaimId(
 }
 
 /**
- * The address again, for someone who claimed without a link, chose "post it",
- * and has come back later. Same rule: only for the holder of a real claim.
+ * The address again, for a guest who claimed without their link, chose "post
+ * it", and has come back later. Same rule as above.
  */
 export async function revealShippingForClaim(
   giftId: string,
   claimId: string
 ): Promise<ClaimResult & { shipping?: Shipping | null }> {
-  if (!claimId) return { ok: false, error: "That claim isn't yours." };
-  const claim = await db.giftClaim.findFirst({ where: { id: claimId, giftId } });
+  const claim = await eligibleClaim(giftId, claimId);
   if (!claim) return { ok: false, error: "That claim isn't yours." };
   return { ok: true, shipping: await readShipping() };
 }
