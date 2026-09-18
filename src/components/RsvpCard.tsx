@@ -5,43 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { submitRsvp } from "@/app/actions/rsvp";
 import { MAX_PARTY_SIZE } from "@/lib/rsvp";
 import type { InviteGuest } from "@/components/InvitePage";
-
-function Stepper({
-  label,
-  value,
-  onDec,
-  onInc,
-}: {
-  label: string;
-  value: number;
-  onDec: () => void;
-  onInc: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-sm tracking-[0.2em] text-ink-dim uppercase">{label}</span>
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          aria-label={`Fewer ${label.toLowerCase()}`}
-          onClick={onDec}
-          className="h-11 w-11 cursor-pointer rounded-full border border-[#c9b8e0] text-2xl transition-colors duration-200 hover:bg-[#f0eaf7]"
-        >
-          −
-        </button>
-        <span className="font-display w-8 text-center text-3xl tabular-nums">{value}</span>
-        <button
-          type="button"
-          aria-label={`More ${label.toLowerCase()}`}
-          onClick={onInc}
-          className="h-11 w-11 cursor-pointer rounded-full border border-[#c9b8e0] text-2xl transition-colors duration-200 hover:bg-[#f0eaf7]"
-        >
-          +
-        </button>
-      </div>
-    </div>
-  );
-}
+import Stepper from "@/components/Stepper";
 
 export default function RsvpCard({ guest }: { guest: InviteGuest }) {
   const [attending, setAttending] = useState<boolean | null>(
@@ -69,7 +33,7 @@ export default function RsvpCard({ guest }: { guest: InviteGuest }) {
   }
 
   return (
-    <div className="rounded-3xl border border-line bg-white/70 p-8 shadow-[0_16px_40px_-24px_rgba(107,79,150,0.35)] backdrop-blur-sm">
+    <div className="rounded-3xl border border-line bg-white/70 p-5 sm:p-8 shadow-[0_16px_40px_-24px_rgba(107,79,150,0.35)] backdrop-blur-sm">
       <AnimatePresence mode="wait">
         {done ? (
           <motion.div
@@ -133,19 +97,23 @@ export default function RsvpCard({ guest }: { guest: InviteGuest }) {
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-6 space-y-4 rounded-2xl border border-line/70 p-5">
+                  <div className="mt-6 space-y-4 rounded-2xl border border-line/70 p-4 sm:p-5">
                     <p className="text-center text-sm text-ink-dim">How many will be in your party?</p>
                     <Stepper
                       label="Adults"
                       value={adults}
                       onDec={() => setAdults((n) => Math.max(1, n - 1))}
                       onInc={() => total < MAX_PARTY_SIZE && setAdults((n) => n + 1)}
+                      decDisabled={adults <= 1}
+                      incDisabled={total >= MAX_PARTY_SIZE}
                     />
                     <Stepper
                       label="Children"
                       value={children}
                       onDec={() => setChildren((n) => Math.max(0, n - 1))}
                       onInc={() => total < MAX_PARTY_SIZE && setChildren((n) => n + 1)}
+                      decDisabled={children <= 0}
+                      incDisabled={total >= MAX_PARTY_SIZE}
                     />
                     <p className="text-center text-[10px] tracking-[0.25em] text-ink-dim uppercase">
                       {total} {total === 1 ? "guest" : "guests"} total

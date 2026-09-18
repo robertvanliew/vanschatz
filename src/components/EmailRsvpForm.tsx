@@ -3,45 +3,9 @@
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { submitEmailRsvp } from "@/app/actions/email-rsvp";
+import Stepper from "@/components/Stepper";
 
 const MAX = 20;
-
-function Stepper({
-  label,
-  value,
-  onDec,
-  onInc,
-}: {
-  label: string;
-  value: number;
-  onDec: () => void;
-  onInc: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-sm tracking-[0.2em] text-ink-dim uppercase">{label}</span>
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          aria-label={`Fewer ${label.toLowerCase()}`}
-          onClick={onDec}
-          className="h-10 w-10 cursor-pointer rounded-full border border-[#c9b8e0] text-xl transition-colors duration-200 hover:bg-[#f0eaf7]"
-        >
-          −
-        </button>
-        <span className="font-display w-7 text-center text-2xl tabular-nums">{value}</span>
-        <button
-          type="button"
-          aria-label={`More ${label.toLowerCase()}`}
-          onClick={onInc}
-          className="h-10 w-10 cursor-pointer rounded-full border border-[#c9b8e0] text-xl transition-colors duration-200 hover:bg-[#f0eaf7]"
-        >
-          +
-        </button>
-      </div>
-    </div>
-  );
-}
 
 export default function EmailRsvpForm({
   variant = "link",
@@ -146,7 +110,7 @@ export default function EmailRsvpForm({
               exit={{ opacity: 0, y: 24, scale: 0.97 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="my-8 w-full max-w-md rounded-3xl border border-white/70 bg-gradient-to-b from-white to-[#faf7f2] p-8 shadow-[0_30px_70px_-24px_rgba(107,79,150,0.55)]"
+              className="my-8 w-full max-w-md rounded-3xl border border-white/70 bg-gradient-to-b from-white to-[#faf7f2] p-5 sm:p-8 shadow-[0_30px_70px_-24px_rgba(107,79,150,0.55)]"
             >
               {done ? (
                 <div className="text-center">
@@ -224,12 +188,16 @@ export default function EmailRsvpForm({
                               value={adults}
                               onDec={() => setAdults((n) => Math.max(1, n - 1))}
                               onInc={() => total < MAX && setAdults((n) => n + 1)}
+                              decDisabled={adults <= 1}
+                              incDisabled={total >= MAX}
                             />
                             <Stepper
                               label="Children"
                               value={children}
                               onDec={() => setChildren((n) => Math.max(0, n - 1))}
                               onInc={() => total < MAX && setChildren((n) => n + 1)}
+                              decDisabled={children <= 0}
+                              incDisabled={total >= MAX}
                             />
                           </div>
                         </motion.div>
