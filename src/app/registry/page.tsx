@@ -11,8 +11,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * The public registry. Browsing and buying work for anyone with the link;
- * claiming needs a personal invitation, so the page offers it read-only.
+ * The public registry. Anyone with the link can browse, buy and claim by name.
+ * The shipping address is never part of this page: it is handed over by the
+ * server only to someone who has claimed a gift.
  */
 export default async function PublicRegistry() {
   // No address is read here at all — it cannot leak into a public page's HTML.

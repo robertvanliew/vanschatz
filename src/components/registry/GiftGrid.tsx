@@ -6,8 +6,11 @@ import GiftCard from "./GiftCard";
 import {
   claimGift,
   claimGiftByName,
+  revealShippingForClaim,
   setDelivery,
+  setDeliveryByClaimId,
   unclaimGift,
+  type ClaimResult,
   unclaimGiftByClaimId,
 } from "@/app/actions/registry";
 import type { Delivery, Shipping } from "@/lib/shipping";
@@ -58,6 +61,15 @@ export default function GiftGrid({
    */
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
 
+  /** Delivery choices made this visit, shown before the server round-trip lands. */
+  const [chosen, setChosen] = useState<Record<string, Delivery>>({});
+
+  /**
+   * The address, for someone who claimed without an invite link. It is not part
+   * of the public page; the server hands it over only against a real claim.
+   */
+  const [revealed, setRevealed] = useState<Shipping | null>(null);
+
   // Claims made from this browser without an invite link. Read through an
   // external store so it renders correctly on the first paint.
   const myClaims = parseMyClaims(
@@ -103,13 +115,16 @@ export default function GiftGrid({
     () =>
       gifts.map((g) => {
         const override = optimistic[g.id];
-        if (override === undefined) return g;
-        return {
-          ...g,
-          claim: override ? { guestId, claimedName: null, delivery: g.claim?.delivery ?? null } : null,
-        } satisfies GiftView;
+        let claim = g.claim;
+        if (override !== undefined) {
+          claim = override
+            ? { guestId, claimedName: null, delivery: g.claim?.delivery ?? null }
+            : null;
+        }
+        if (claim && chosen[g.id]) claim = { ...claim, delivery: chosen[g.id] };
+        return { ...g, claim } satisfies GiftView;
       }),
-    [gifts, optimistic, guestId]
+    [gifts, optimistic, guestId, chosen]
   );
 
   const shown = filterGifts(view, filter);
@@ -140,13 +155,48 @@ export default function GiftGrid({
   }
 
   function chooseDelivery(giftId: string, choice: Delivery) {
-    if (!token) return;
+    // Without an invite link the claim is identified by the id this browser
+    // kept when it claimed. An early `if (!token) return` here once made both
+    // buttons silently do nothing for everyone on the public registry.
+    const claimId = myClaims[giftId];
+    if (!token && !claimId) return;
+
+    const previous = chosen[giftId];
+    setChosen((c) => ({ ...c, [giftId]: choice }));
     setPendingId(giftId);
     setErrors((e) => ({ ...e, [giftId]: "" }));
     startTransition(async () => {
-      const result = await setDelivery(token, giftId, choice);
-      if (!result.ok) {
+      const result: ClaimResult & { shipping?: Shipping | null } = token
+        ? await setDelivery(token, giftId, choice)
+        : await setDeliveryByClaimId(giftId, claimId, choice);
+      if (result.ok) {
+        if (result.shipping) setRevealed(result.shipping);
+      } else {
+        setChosen((c) => {
+          const next = { ...c };
+          if (previous) next[giftId] = previous;
+          else delete next[giftId];
+          return next;
+        });
         setErrors((e) => ({ ...e, [giftId]: result.error ?? "That didn't work." }));
+      }
+      setPendingId(null);
+    });
+  }
+
+  function reveal(giftId: string) {
+    const claimId = myClaims[giftId];
+    if (!claimId) return;
+    setPendingId(giftId);
+    startTransition(async () => {
+      const result = await revealShippingForClaim(giftId, claimId);
+      if (result.ok && result.shipping) {
+        setRevealed(result.shipping);
+      } else {
+        const message = result.ok
+          ? "The address hasn't been added yet. Please get in touch with us."
+          : result.error ?? "That didn't work.";
+        setErrors((e) => ({ ...e, [giftId]: message }));
       }
       setPendingId(null);
     });
@@ -197,7 +247,8 @@ export default function GiftGrid({
               canClaim={Boolean(token)}
               pending={pendingId === gift.id}
               error={errors[gift.id] || null}
-              shipping={shipping}
+              shipping={shipping ?? revealed}
+              onReveal={!token && myClaims[gift.id] ? () => reveal(gift.id) : undefined}
               onClaim={() => run(gift.id, true)}
               onUnclaim={() =>
                 token ? run(gift.id, false) : releaseNamed(gift.id)

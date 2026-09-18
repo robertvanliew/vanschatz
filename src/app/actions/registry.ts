@@ -3,7 +3,8 @@
 import { db } from "@/lib/db";
 import { canClaim, canClaimNamed, canUnclaim } from "@/lib/registry";
 import { findGuestMatch } from "@/lib/rsvp-matching";
-import { isDelivery } from "@/lib/shipping";
+import { isDelivery, type Shipping } from "@/lib/shipping";
+import { readShipping } from "@/lib/settings";
 import { revalidatePath } from "next/cache";
 
 export type ClaimResult = { ok: boolean; error?: string };
@@ -174,4 +175,50 @@ export async function unclaimGiftByClaimId(
   revalidatePath("/registry");
   revalidatePath("/admin");
   return { ok: true };
+}
+
+/**
+ * Record how a gift claimed *without* an invite link is reaching the couple.
+ *
+ * Authorised by the claim's own id, like unclaimGiftByClaimId: the update is
+ * scoped by both ids, so it touches nothing unless this browser really made
+ * this claim.
+ *
+ * When the answer is "post it", the shipping address comes back in the
+ * response. That is a deliberate widening of who can see it: Julie and Robert
+ * chose it so that people who can't attend, and people who only had a paper
+ * invitation, can still send a gift. It is still never rendered into a public
+ * page; you have to have claimed a gift to receive it.
+ */
+export async function setDeliveryByClaimId(
+  giftId: string,
+  claimId: string,
+  delivery: string
+): Promise<ClaimResult & { shipping?: Shipping | null }> {
+  if (!isDelivery(delivery)) return { ok: false, error: "That isn't a delivery option." };
+  if (!claimId) return { ok: false, error: "That claim isn't yours." };
+
+  const { count } = await db.giftClaim.updateMany({
+    where: { id: claimId, giftId },
+    data: { delivery },
+  });
+  if (count === 0) return { ok: false, error: "That claim isn't yours." };
+
+  revalidatePath("/registry");
+  revalidatePath("/admin");
+  return { ok: true, shipping: delivery === "SHIP" ? await readShipping() : null };
+}
+
+/**
+ * The address again, for someone who claimed without a link, chose "post it",
+ * and has come back later. Same rule: only for the holder of a real claim.
+ */
+export async function revealShippingForClaim(
+  giftId: string,
+  claimId: string
+): Promise<ClaimResult & { shipping?: Shipping | null }> {
+  if (!claimId) return { ok: false, error: "That claim isn't yours." };
+  const claim = await db.giftClaim.findFirst({ where: { id: claimId, giftId } });
+  if (!claim) return { ok: false, error: "That claim isn't yours." };
+  return { ok: true, shipping: await readShipping() };
 }

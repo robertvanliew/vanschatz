@@ -49,9 +49,7 @@ export default function RegistryPage({
           </p>
           <p className="mx-auto mt-3 max-w-xl text-sm text-ink-dim">
             Everything links straight to the shop &mdash; nothing is bought through this page.
-            {token
-              ? " Tap “I’m getting this” so nobody ends up buying the same thing twice."
-              : " Open your personal invitation link if you'd like to claim one."}
+            {" Tap “I’m getting this” so nobody ends up buying the same thing twice."}
           </p>
         </div>
 

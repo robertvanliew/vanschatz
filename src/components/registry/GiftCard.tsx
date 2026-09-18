@@ -52,6 +52,7 @@ export default function GiftCard({
   onUnclaim,
   onDelivery,
   onClaimNamed,
+  onReveal,
 }: {
   gift: GiftView;
   claimed: boolean;
@@ -67,6 +68,8 @@ export default function GiftCard({
   onDelivery: (choice: Delivery) => void;
   /** Claim without an invite link, identifying by name. */
   onClaimNamed: (name: string) => void;
+  /** Present only for a claim this browser made without an invite link. */
+  onReveal?: () => void;
 }) {
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState("");
@@ -209,6 +212,7 @@ export default function GiftCard({
             delivery={isDelivery(gift.claim?.delivery) ? gift.claim.delivery : null}
             pending={pending}
             onChoose={onDelivery}
+            onReveal={onReveal}
           />
         )}
 

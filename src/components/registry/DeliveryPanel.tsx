@@ -15,12 +15,18 @@ export default function DeliveryPanel({
   delivery,
   pending,
   onChoose,
+  onReveal,
 }: {
   /** Null on the public registry, where the address is never sent. */
   shipping: Shipping | null;
   delivery: Delivery | null;
   pending: boolean;
   onChoose: (choice: Delivery) => void;
+  /**
+   * Fetch the address for someone who claimed without an invite link and is
+   * back on a later visit. It is never part of the public page itself.
+   */
+  onReveal?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -99,9 +105,18 @@ export default function DeliveryPanel({
                 </p>
               )}
             </>
+          ) : onReveal ? (
+            <button
+              type="button"
+              onClick={onReveal}
+              disabled={pending}
+              className="w-full rounded-full border border-[#e0d4f0] bg-white px-4 py-2 text-xs font-medium text-[#6b4f96] transition-colors hover:bg-[#f4eefb] disabled:opacity-60"
+            >
+              {pending ? "Just a moment…" : "Show the address"}
+            </button>
           ) : (
             <p className="text-center text-xs text-ink-dim">
-              Open your personal invitation link to see where to send it.
+              Get in touch with Julie &amp; Robert for the address.
             </p>
           )}
         </div>
