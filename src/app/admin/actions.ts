@@ -11,8 +11,8 @@ import { runManualReminders, runScheduledReminders } from "@/lib/reminders";
 import {
   sendInviteToGuest,
   sendAllInvites,
-  sendRegistryTest,
-  sendRegistryAnnouncement,
+  sendWeddingUpdateTest,
+  sendWeddingUpdate,
 } from "@/lib/invites";
 import { writeSettings } from "@/lib/settings";
 import { SHIPPING_KEYS } from "@/lib/shipping";
@@ -96,26 +96,20 @@ export async function sendAllInvitesAction(): Promise<void> {
   revalidatePath("/admin");
 }
 
-/* ---------------------------------------------------- registry announcement */
+/* -------------------------------------------------------- wedding update */
 
-/**
- * Send the announcement to one guest — the couple themselves — so they see the
- * real email before 28 other people do. Ignores send-once protection, since a
- * test they can only run once is not a test.
- */
-export async function testRegistryEmailAction(formData: FormData): Promise<void> {
+/** Email the couple both versions of the update, to their own address only. */
+export async function testRegistryEmailAction(): Promise<void> {
   await requireAdmin();
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) return;
-  await sendRegistryTest(id);
+  await sendWeddingUpdateTest();
   revalidatePath("/admin");
   redirect("/admin?saved=registry-test");
 }
 
-/** Send the announcement to everyone who should get it. Not reversible. */
+/** Send the update to everyone who should get it. Not reversible. */
 export async function sendRegistryAnnouncementAction(): Promise<void> {
   await requireAdmin();
-  await sendRegistryAnnouncement();
+  await sendWeddingUpdate();
   revalidatePath("/admin");
   redirect("/admin?saved=registry-sent");
 }

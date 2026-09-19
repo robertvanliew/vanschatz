@@ -1,8 +1,10 @@
 import { describe, expect, test } from "vitest";
 import {
   announcementSummary,
+  countdownLabel,
   planAnnouncement,
   REGISTRY_KEY,
+  UPDATE_KEY,
   type AnnouncementGuest,
 } from "@/lib/registry-email";
 
@@ -20,7 +22,7 @@ const sentInPractice = [{ scheduleKey: REGISTRY_KEY, channel: "email", simulated
 describe("planAnnouncement", () => {
   test("a guest who hasn't replied gets the RSVP nudge", () => {
     const { sends } = planAnnouncement([guest({ id: "1", rsvpStatus: "PENDING" })]);
-    expect(sends).toEqual([{ guestId: "1", to: "g@example.com", nudgeRsvp: true }]);
+    expect(sends).toEqual([{ guestId: "1", to: "g@example.com", nudgeRsvp: true, partySize: null }]);
   });
 
   test("a guest who already said yes gets the registry without the nudge", () => {
@@ -86,5 +88,44 @@ describe("announcementSummary", () => {
       registryOnly: 0,
       skipped: 0,
     });
+  });
+});
+
+describe("wedding update", () => {
+  test("an attending guest is shown the headcount we have for them", () => {
+    const { sends } = planAnnouncement([guest({ id: "1", rsvpStatus: "YES", partySize: 3 })]);
+    expect(sends[0]).toMatchObject({ nudgeRsvp: false, partySize: 3 });
+  });
+
+  test("a guest who hasn't replied has no headcount to show", () => {
+    const { sends } = planAnnouncement([guest({ id: "1", rsvpStatus: "PENDING", partySize: 2 })]);
+    expect(sends[0]).toMatchObject({ nudgeRsvp: true, partySize: null });
+  });
+
+  test("anyone who already had this update is not emailed again", () => {
+    const sent = [{ scheduleKey: UPDATE_KEY, channel: "email", simulated: false }];
+    expect(planAnnouncement([guest({ id: "1", reminders: sent })]).sends).toHaveLength(0);
+  });
+
+  test("the automatic one-month reminder does not stop the update", () => {
+    const monthly = [{ scheduleKey: "1month", channel: "email", simulated: false }];
+    expect(planAnnouncement([guest({ id: "1", reminders: monthly })]).sends).toHaveLength(1);
+  });
+});
+
+describe("countdownLabel", () => {
+  test("weeks when it's a fortnight or more away", () => {
+    expect(countdownLabel(28)).toBe("Four weeks to go");
+    expect(countdownLabel(14)).toBe("Two weeks to go");
+    expect(countdownLabel(31)).toBe("Four weeks to go");
+  });
+  test("days when it's close", () => {
+    expect(countdownLabel(10)).toBe("Ten days to go");
+    expect(countdownLabel(2)).toBe("Two days to go");
+  });
+  test("tomorrow, today, and afterwards", () => {
+    expect(countdownLabel(1)).toBe("Tomorrow");
+    expect(countdownLabel(0)).toBe("Today's the day");
+    expect(countdownLabel(-3)).toBe("Thank you");
   });
 });

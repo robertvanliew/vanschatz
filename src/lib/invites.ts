@@ -1,12 +1,19 @@
-import { WEDDING } from "@/lib/wedding";
+import { WEDDING, daysUntil, mapsDirUrl } from "@/lib/wedding";
 import { db } from "@/lib/db";
 import { sendMessage } from "@/lib/messaging";
-import { registryEmailHtml, weddingEmailHtml } from "@/lib/email-template";
 import {
+  weddingEmailHtml,
+  weddingUpdateHtml,
+  weddingUpdateText,
+  type WeddingUpdateDetails,
+} from "@/lib/email-template";
+import {
+  countdownLabel,
   planAnnouncement,
-  REGISTRY_KEY,
+  UPDATE_KEY,
   type AnnouncementGuest,
 } from "@/lib/registry-email";
+import { FUND_KEYS } from "@/lib/fund";
 
 const INVITE_KEY = "invite";
 const INVITE_SUBJECT = "You're invited — Julie & Robert's wedding";
@@ -101,83 +108,102 @@ export async function sendAllInvites(): Promise<{ sent: number; skipped: number 
   return { sent, skipped };
 }
 
-/* ------------------------------------------------- registry announcement */
+/* ------------------------------------------------------- wedding update */
 
-const REGISTRY_SUBJECT = "Our gift registry is up — Julie & Robert";
+const COUPLE_EMAIL = process.env.COUPLE_EMAIL ?? "robvanliew@gmail.com";
 
-function registryBody(name: string, token: string, nudgeRsvp: boolean): string {
-  const registry = `${baseUrl()}/invite/${token}/registry`;
-  return (
-    `Hi ${name}! We've put together a small gift registry — and a honeymoon fund, ` +
-    `if you'd rather help with the trip. Have a look: ${registry}` +
-    (nudgeRsvp
-      ? `\n\nWe also haven't heard from you yet — could you let us know if you can make it? ` +
-        `${baseUrl()}/invite/${token}`
-      : "")
-  );
+/** The parts of the update that are the same for every guest, worked out at send time. */
+async function updateDetails(now: Date = new Date()): Promise<WeddingUpdateDetails> {
+  const [recentGift, fundLink] = await Promise.all([
+    db.gift.findFirst({
+      where: { active: true, createdAt: { gt: new Date(now.getTime() - 21 * 86_400_000) } },
+    }),
+    db.setting.findUnique({ where: { key: FUND_KEYS.payLink } }),
+  ]);
+  return {
+    heading: countdownLabel(daysUntil(now)),
+    dateLabel: WEDDING.dateLabel,
+    timeLabel: WEDDING.timeLabel,
+    scheduleLabel: WEDDING.scheduleLabel,
+    venueName: WEDDING.venueName,
+    venueAddress: WEDDING.venueAddress,
+    directionsUrl: mapsDirUrl(),
+    newGifts: Boolean(recentGift),
+    fundLive: Boolean(fundLink?.value.trim()),
+  };
 }
 
-/**
- * Email one guest the registry announcement, ignoring send-once protection.
- * Used for the couple's own test send, which must work however many times they
- * click it.
- */
-export async function sendRegistryTest(guestId: string): Promise<{ ok: boolean; reason?: string }> {
-  const guest = await db.guest.findUnique({ where: { id: guestId } });
-  if (!guest) return { ok: false, reason: "not found" };
-  if (!guest.email) return { ok: false, reason: "no email on file" };
+const updateSubject = (heading: string) => `${heading} \u2014 Julie & Robert's wedding`;
 
-  const nudge = guest.rsvpStatus === "PENDING";
-  await sendMessage(
-    "email",
-    guest.email,
-    registryBody(guest.name, guest.token, nudge),
-    `[TEST] ${REGISTRY_SUBJECT}`,
-    registryEmailHtml({ name: guest.name, token: guest.token, nudgeRsvp: nudge })
-  );
+/**
+ * Send the couple both versions of the update, to their own address only.
+ *
+ * Deliberately never addressed to a guest: a test that could reach a guest is
+ * not a test. The links inside are the couple's own invitation, so every button
+ * in the test works without acting on anyone else's behalf.
+ */
+export async function sendWeddingUpdateTest(): Promise<{ ok: boolean; reason?: string }> {
+  const self = await db.guest.findFirst({
+    where: { email: { equals: COUPLE_EMAIL, mode: "insensitive" } },
+  });
+  if (!self) return { ok: false, reason: `No guest on the list has the email ${COUPLE_EMAIL}.` };
+
+  const details = await updateDetails();
+  const versions = [
+    { label: "as a guest who hasn't replied", nudgeRsvp: true, partySize: null },
+    { label: "as an attending guest", nudgeRsvp: false, partySize: self.partySize || 2 },
+  ];
+  for (const v of versions) {
+    const args = { name: self.name, token: self.token, nudgeRsvp: v.nudgeRsvp, partySize: v.partySize, details };
+    await sendMessage(
+      "email",
+      COUPLE_EMAIL,
+      weddingUpdateText(args),
+      `[TEST \u2014 ${v.label}] ${updateSubject(details.heading)}`,
+      weddingUpdateHtml(args)
+    );
+  }
   return { ok: true };
 }
 
 /**
- * Send the announcement to everyone who should get it.
+ * Send the update to everyone who should get it.
  *
- * Who that is lives in planAnnouncement and is unit-tested, so this function
- * only does the sending. Each success is logged immediately, so a failure part
- * way through never re-emails the people already reached.
+ * Who that is lives in planAnnouncement and is unit-tested, so this only sends.
+ * Each success is logged as it happens, so a failure part way through never
+ * re-emails anyone already reached.
  */
-export async function sendRegistryAnnouncement(): Promise<{ sent: number; skipped: number }> {
+export async function sendWeddingUpdate(): Promise<{ sent: number; skipped: number; failed: number }> {
   const guests = await db.guest.findMany({ include: { reminders: true } });
   const { sends, skipped } = planAnnouncement(guests as unknown as AnnouncementGuest[]);
   const byId = new Map(guests.map((g) => [g.id, g]));
+  const details = await updateDetails();
   let sent = 0;
+  let failed = 0;
 
   for (const plan of sends) {
     const g = byId.get(plan.guestId);
     if (!g) continue;
+    const args = { name: g.name, token: g.token, nudgeRsvp: plan.nudgeRsvp, partySize: plan.partySize, details };
     try {
       const { simulated } = await sendMessage(
         "email",
         plan.to,
-        registryBody(g.name, g.token, plan.nudgeRsvp),
-        REGISTRY_SUBJECT,
-        registryEmailHtml({ name: g.name, token: g.token, nudgeRsvp: plan.nudgeRsvp })
+        weddingUpdateText(args),
+        updateSubject(details.heading),
+        weddingUpdateHtml(args)
       );
       await db.reminderLog.upsert({
-        where: {
-          guestId_scheduleKey_channel: {
-            guestId: g.id,
-            scheduleKey: REGISTRY_KEY,
-            channel: "email",
-          },
-        },
-        create: { guestId: g.id, scheduleKey: REGISTRY_KEY, channel: "email", simulated },
+        where: { guestId_scheduleKey_channel: { guestId: g.id, scheduleKey: UPDATE_KEY, channel: "email" } },
+        create: { guestId: g.id, scheduleKey: UPDATE_KEY, channel: "email", simulated },
         update: { simulated, sentAt: new Date() },
       });
       sent++;
     } catch (err) {
-      console.error(`registry announcement failed for guest ${g.id}:`, err);
+      failed++;
+      console.error(`wedding update failed for guest ${g.id}:`, err);
     }
   }
 
-  return { sent, skipped: skipped.length };
+  return { sent, skipped: skipped.length, failed };
 }
