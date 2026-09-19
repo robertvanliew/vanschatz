@@ -56,10 +56,10 @@ function StatusBadge({ status }: { status: string }) {
 export default async function AdminDashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; sent?: string; failed?: string }>;
 }) {
   if (!(await isAdmin())) redirect("/admin/login");
-  const { saved } = await searchParams;
+  const { saved, sent: sentCount, failed: failedCount } = await searchParams;
 
   const guests = await db.guest.findMany({
     orderBy: { createdAt: "asc" },
@@ -516,6 +516,8 @@ export default async function AdminDashboard({
       <RegistryAnnouncement
         guests={guests}
         saved={saved}
+        sentCount={Number(sentCount ?? 0)}
+        failedCount={Number(failedCount ?? 0)}
         card={card}
         primaryBtn={primaryBtn}
         ghostBtn={ghostBtn}

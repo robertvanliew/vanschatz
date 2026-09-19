@@ -16,12 +16,16 @@ import { announcementSummary, type AnnouncementGuest } from "@/lib/registry-emai
 export default function RegistryAnnouncement({
   guests,
   saved,
+  sentCount = 0,
+  failedCount = 0,
   card,
   primaryBtn,
   ghostBtn,
 }: {
   guests: AnnouncementGuest[];
   saved?: string;
+  sentCount?: number;
+  failedCount?: number;
   card: string;
   primaryBtn: string;
   ghostBtn: string;
@@ -45,9 +49,16 @@ export default function RegistryAnnouncement({
           an attending guest sees it. Read both before sending to everyone.
         </p>
       )}
-      {saved === "registry-sent" && (
+      {saved === "registry-sent" && failedCount === 0 && (
         <p className="mt-4 rounded-xl border border-[#bcd0ac] bg-[#eef4e7] px-4 py-2.5 text-sm text-[#5f7554]">
-          Sent. Nobody will be emailed this again.
+          Sent to {sentCount} {sentCount === 1 ? "guest" : "guests"}. Nobody will be emailed this
+          again.
+        </p>
+      )}
+      {saved === "registry-sent" && failedCount > 0 && (
+        <p className="mt-4 rounded-xl border border-[#e0c3c7] bg-[#f7edee] px-4 py-2.5 text-sm text-[#a24a56]">
+          Sent to {sentCount}, but {failedCount} couldn&rsquo;t be sent. Press &ldquo;Email
+          everyone&rdquo; again &mdash; it only goes to the ones who didn&rsquo;t get it.
         </p>
       )}
 

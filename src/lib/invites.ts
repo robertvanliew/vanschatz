@@ -184,6 +184,8 @@ export async function sendWeddingUpdate(): Promise<{ sent: number; skipped: numb
   for (const plan of sends) {
     const g = byId.get(plan.guestId);
     if (!g) continue;
+    // Stay under the provider's 10-a-second limit instead of leaning on retries.
+    if (sent + failed > 0) await new Promise((resolve) => setTimeout(resolve, 150));
     const args = { name: g.name, token: g.token, nudgeRsvp: plan.nudgeRsvp, partySize: plan.partySize, details };
     try {
       const { simulated } = await sendMessage(

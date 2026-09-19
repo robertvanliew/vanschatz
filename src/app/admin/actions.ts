@@ -106,12 +106,17 @@ export async function testRegistryEmailAction(): Promise<void> {
   redirect("/admin?saved=registry-test");
 }
 
-/** Send the update to everyone who should get it. Not reversible. */
+/**
+ * Send the update to everyone who should get it. Not reversible.
+ *
+ * Reports how many failed. It used to say "Sent" regardless, which hid six
+ * missed guests; pressing again reaches only those who didn't get it.
+ */
 export async function sendRegistryAnnouncementAction(): Promise<void> {
   await requireAdmin();
-  await sendWeddingUpdate();
+  const { sent, failed } = await sendWeddingUpdate();
   revalidatePath("/admin");
-  redirect("/admin?saved=registry-sent");
+  redirect(`/admin?saved=registry-sent&sent=${sent}&failed=${failed}`);
 }
 
 /**
