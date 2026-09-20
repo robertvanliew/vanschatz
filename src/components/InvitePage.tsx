@@ -11,6 +11,7 @@ import {
   type RegistryPreviewGift,
 } from "@/components/Sections";
 import RsvpCard from "@/components/RsvpCard";
+import SiteHeader from "@/components/SiteHeader";
 import EmailRsvpForm from "@/components/EmailRsvpForm";
 
 export type InviteGuest = {
@@ -34,15 +35,24 @@ export default function InvitePage({
   registryPreview?: RegistryPreviewGift[];
   registryTotal?: number;
 }) {
+  const homeHref = guest ? `/invite/${guest.token}` : "/";
+  const registryHref = guest ? `/invite/${guest.token}/registry` : "/registry";
+
   return (
     <main>
       {/* Animated water-plane gradient behind everything; the hero wash fades
           into it so there's no seam. */}
       <ShaderBackground />
 
+      <SiteHeader registryHref={registryHref} homeHref={homeHref} />
+
       <FloralHero guestName={guest?.name} />
 
-      <section className="px-6 pt-24 pb-10">
+      {/* Gifts used to sit at the very bottom, where guests weren't finding it.
+          It now comes first, before the countdown. */}
+      <Registry preview={registryPreview} total={registryTotal} href={registryHref} />
+
+      <section className="px-6 pt-10 pb-10">
         <Reveal>
           <SectionHeading>Counting down</SectionHeading>
           <Countdown />
@@ -92,11 +102,6 @@ export default function InvitePage({
           )}
         </Reveal>
       </section>
-      <Registry
-        preview={registryPreview}
-        total={registryTotal}
-        href={guest ? `/invite/${guest.token}/registry` : "/registry"}
-      />
       <footer className="pb-16 text-center text-sm text-ink-dim">
         <p className="font-display text-lg italic">With love, Julie &amp; Robert</p>
       </footer>

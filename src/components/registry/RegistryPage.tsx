@@ -1,6 +1,7 @@
 import Link from "next/link";
 import GiftGrid from "./GiftGrid";
 import ShaderBackground from "@/components/ShaderBackground";
+import SiteHeader from "@/components/SiteHeader";
 import { type GiftView } from "@/lib/registry";
 import { addressLines, type Shipping } from "@/lib/shipping";
 import FundSection from "./FundSection";
@@ -32,7 +33,13 @@ export default function RegistryPage({
     <main>
       <ShaderBackground />
 
-      <section className="mx-auto max-w-6xl px-6 pb-28 pt-24">
+      <SiteHeader
+        registryHref={token ? `/invite/${token}/registry` : "/registry"}
+        homeHref={token ? `/invite/${token}` : "/"}
+        showRsvp={false}
+      />
+
+      <section className="mx-auto max-w-6xl px-6 pb-28 pt-16">
         <div className="mb-12 text-center">
           <Link
             href={token ? `/invite/${token}` : "/"}
