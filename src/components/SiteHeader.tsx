@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 /**
- * A slim bar pinned to the top of the invitation, with a way to the registry
- * from anywhere on the page.
+ * A slim bar pinned to the top of the invitation, with a way to the registry,
+ * the RSVP and the song requests from anywhere on the page.
  *
  * The gifts section used to sit at the very bottom and guests were not finding
  * it. Moving it up helps people who scroll; this helps everyone else.
@@ -33,15 +33,21 @@ export default function SiteHeader({
           Julie &amp; Robert
         </Link>
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           {showRsvp && (
             <Link
               href={`${homeHref}#rsvp`}
-              className="rounded-full px-3 py-2 text-xs tracking-[0.14em] text-ink-dim uppercase transition-colors hover:text-ink sm:text-[13px]"
+              className="rounded-full px-2 py-2 text-xs tracking-[0.14em] text-ink-dim uppercase transition-colors hover:text-ink sm:px-3 sm:text-[13px]"
             >
               RSVP
             </Link>
           )}
+          <Link
+            href={`${homeHref}#songs`}
+            className="rounded-full px-2 py-2 text-xs tracking-[0.14em] text-ink-dim uppercase transition-colors hover:text-ink sm:px-3 sm:text-[13px]"
+          >
+            Songs
+          </Link>
           <Link
             href={registryHref}
             className="rounded-full bg-gradient-to-r from-[#6b4f96] to-[#8a6db1] px-4 py-2 text-xs font-medium tracking-[0.12em] text-white uppercase shadow-sm transition-[filter,transform] hover:brightness-110 active:scale-[0.98] sm:px-5 sm:text-[13px]"

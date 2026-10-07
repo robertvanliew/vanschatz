@@ -27,6 +27,8 @@ import {
 import { CopyLinkButton, ConfirmButton } from "@/app/admin/AdminUi";
 import FundAdmin from "@/app/admin/FundAdmin";
 import RegistryAnnouncement from "@/app/admin/RegistryAnnouncement";
+import SongAdmin from "@/app/admin/SongAdmin";
+import { rankSongs } from "@/lib/songs";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +77,13 @@ export default async function AdminDashboard({
     orderBy: { createdAt: "desc" },
     include: { guest: { select: { name: true } } },
   });
+  const songRows = await db.songRequest.findMany({
+    include: { guest: { select: { name: true } } },
+  });
+  const songs = rankSongs(
+    songRows.map((r) => ({ ...r, requester: r.guest?.name ?? r.givenName ?? "A guest" }))
+  );
+  const guestsWhoAsked = new Set(songRows.map((r) => r.guestId ?? `name:${r.givenName}`)).size;
   const claims = gifts.map((g) => g.claim).filter((c) => c !== null);
   const shippingCount = claims.filter((c) => c.delivery === "SHIP").length;
   const bringingCount = claims.filter((c) => c.delivery === "BRING").length;
@@ -512,6 +521,8 @@ export default async function AdminDashboard({
           ))}
         </ul>
       </section>
+
+      <SongAdmin songs={songs} guestsWhoAsked={guestsWhoAsked} card={card} ghostBtn={ghostBtn} />
 
       <RegistryAnnouncement
         guests={guests}

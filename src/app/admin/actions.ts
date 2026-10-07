@@ -203,6 +203,14 @@ export async function deleteContributionAction(formData: FormData): Promise<void
   revalidatePath("/registry");
 }
 
+/** Remove a song from the list entirely — every guest's request for it. */
+export async function deleteSongAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const trackId = String(formData.get("trackId") ?? "");
+  if (trackId) await db.songRequest.deleteMany({ where: { trackId } });
+  revalidatePath("/admin");
+}
+
 /* ---------------------------------------------------------------- registry */
 
 /** Dollars as typed ("129.99", "$130", "") into integer cents, or null. */

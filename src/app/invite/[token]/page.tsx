@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import InvitePage from "@/components/InvitePage";
 import { getRegistryPreview } from "@/lib/registry-preview";
+import type { PickedSong } from "@/components/SongPicker";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,21 @@ export default async function GuestInvite({
       />
     );
   }
+  const rows = await db.songRequest.findMany({
+    where: { guestId: guest.id },
+    orderBy: { createdAt: "asc" },
+  });
+  const songs: PickedSong[] = rows.map((r) => ({
+    trackId: r.trackId,
+    title: r.title,
+    artist: r.artist,
+    album: null,
+    artwork: r.artwork,
+    previewUrl: r.previewUrl,
+    appleUrl: r.appleUrl,
+    explicit: r.explicit,
+    note: r.note ?? "",
+  }));
   return (
     <InvitePage
       guest={{
@@ -36,6 +52,7 @@ export default async function GuestInvite({
       }}
       registryPreview={registry.preview}
       registryTotal={registry.total}
+      songs={songs}
     />
   );
 }

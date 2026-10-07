@@ -28,6 +28,7 @@ model Guest {
   reminders   ReminderLog[]
   giftClaims  GiftClaim[]
   contributions Contribution[]
+  songRequests SongRequest[]
 }
 
 /// A single registry item. Guests are sent to `url` to buy it; nothing is sold
@@ -111,4 +112,29 @@ model Contribution {
   noteHidden  Boolean  @default(false)
   confirmed   Boolean  @default(false)
   createdAt   DateTime @default(now())
+}
+
+/// A song a guest would love to hear at the reception.
+///
+/// The details are Apple's, looked up by trackId on the server when the guest
+/// submits, not whatever their browser sent. A guest with an invite link has one
+/// list that each submission replaces; someone without a link adds under the
+/// name they typed.
+model SongRequest {
+  id         String   @id @default(cuid())
+  guestId    String?
+  guest      Guest?   @relation(fields: [guestId], references: [id], onDelete: SetNull)
+  givenName  String?
+  trackId    String
+  title      String
+  artist     String
+  artwork    String?
+  previewUrl String?
+  appleUrl   String
+  explicit   Boolean  @default(false)
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([guestId])
+  @@index([trackId])
 }

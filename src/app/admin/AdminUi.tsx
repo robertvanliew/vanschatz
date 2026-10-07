@@ -83,3 +83,21 @@ export function CopyLinkButton({ url }: { url: string }) {
     </button>
   );
 }
+
+/** Copies a block of text, such as the song list for the DJ. */
+export function CopyTextButton({ text, label, className }: { text: string; label: string; className: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+      className={className}
+    >
+      {copied ? "Copied!" : label}
+    </button>
+  );
+}

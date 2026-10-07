@@ -13,6 +13,7 @@ import {
 import RsvpCard from "@/components/RsvpCard";
 import SiteHeader from "@/components/SiteHeader";
 import EmailRsvpForm from "@/components/EmailRsvpForm";
+import SongPicker, { type PickedSong } from "@/components/SongPicker";
 
 export type InviteGuest = {
   name: string;
@@ -28,12 +29,15 @@ export default function InvitePage({
   unknownToken = false,
   registryPreview = [],
   registryTotal = 0,
+  songs = [],
 }: {
   guest: InviteGuest | null;
   unknownToken?: boolean;
   /** A few product shots for the Gifts teaser; empty renders "coming soon". */
   registryPreview?: RegistryPreviewGift[];
   registryTotal?: number;
+  /** The songs this guest already sent, so they can change them. */
+  songs?: PickedSong[];
 }) {
   const homeHref = guest ? `/invite/${guest.token}` : "/";
   const registryHref = guest ? `/invite/${guest.token}/registry` : "/registry";
@@ -79,7 +83,7 @@ export default function InvitePage({
 
       <WhenWhere />
       <Details />
-      <section id="rsvp" className="mx-auto max-w-xl px-6 py-24">
+      <section id="rsvp" className="mx-auto max-w-xl scroll-mt-20 px-6 py-24">
         <Reveal>
           <SectionHeading>RSVP</SectionHeading>
           {guest ? (
@@ -102,6 +106,19 @@ export default function InvitePage({
           )}
         </Reveal>
       </section>
+      {/* Asked after the RSVP: once someone has said yes, "what should we
+          play?" is the natural next question. */}
+      <section id="songs" className="mx-auto max-w-xl scroll-mt-20 px-6 pb-24">
+        <Reveal>
+          <SectionHeading>Get us dancing</SectionHeading>
+          <p className="mx-auto -mt-3 mb-8 max-w-md text-center text-ink-dim">
+            Which songs would get you on the dance floor? Pick up to five and
+            we&rsquo;ll make sure they&rsquo;re on the list.
+          </p>
+          <SongPicker token={guest?.token ?? null} initial={songs} />
+        </Reveal>
+      </section>
+
       <footer className="pb-16 text-center text-sm text-ink-dim">
         <p className="font-display text-lg italic">With love, Julie &amp; Robert</p>
       </footer>
