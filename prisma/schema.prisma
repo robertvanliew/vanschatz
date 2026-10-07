@@ -117,7 +117,8 @@ model Contribution {
 /// A song a guest would love to hear at the reception.
 ///
 /// The details are Apple's, looked up by trackId on the server when the guest
-/// submits, not whatever their browser sent. A guest with an invite link has one
+/// submits, not whatever their browser sent — except for songs typed in by hand
+/// (manual), whose trackId is "manual:" plus the words. A guest with an invite link has one
 /// list that each submission replaces; someone without a link adds under the
 /// name they typed.
 model SongRequest {
@@ -128,10 +129,16 @@ model SongRequest {
   trackId    String
   title      String
   artist     String
+  /// Classical only, read from Apple's album title ("Berlioz: Symphonie
+  /// fantastique"), since Apple's search data has no composer field.
+  composer   String?
   artwork    String?
   previewUrl String?
-  appleUrl   String
+  /// Null for a song the guest typed in because it isn't on Apple Music.
+  appleUrl   String?
   explicit   Boolean  @default(false)
+  /// Typed in by the guest: the only rows whose title isn't from Apple.
+  manual     Boolean  @default(false)
   note       String?
   createdAt  DateTime @default(now())
 

@@ -2,7 +2,15 @@
 
 import { db } from "@/lib/db";
 import { sendMessage } from "@/lib/messaging";
-import { cleanPicks, lookupUrl, songRequestEmail, tracksFrom, type Track } from "@/lib/songs";
+import {
+  cleanPicks,
+  lookupUrl,
+  manualTrack,
+  songRequestEmail,
+  toTrack,
+  type Pick,
+  type Track,
+} from "@/lib/songs";
 import { revalidatePath } from "next/cache";
 
 const COUPLE_EMAIL = process.env.COUPLE_EMAIL ?? "robvanliew@gmail.com";
@@ -21,12 +29,13 @@ function baseUrl(): string {
  * name is required and each submission adds to the list.
  *
  * Songs are looked up again at Apple by id rather than trusting the titles the
- * browser sent.
+ * browser sent. Songs typed in by hand are the exception: they aren't on Apple
+ * Music, so the guest's words are all there is.
  */
 export async function submitSongs(input: {
   token: string | null;
   name: string;
-  picks: { trackId: string; note: string }[];
+  picks: Pick[];
 }): Promise<SongResult> {
   const cleaned = cleanPicks(input.picks);
   if (!cleaned.ok) return { ok: false, error: cleaned.error };
@@ -46,18 +55,26 @@ export async function submitSongs(input: {
     givenName = name;
   }
 
-  let tracks: Track[];
-  try {
-    const res = await fetch(lookupUrl(picks.map((p) => p.trackId)), { cache: "no-store" });
-    if (!res.ok) throw new Error(`iTunes lookup ${res.status}`);
-    tracks = tracksFrom(await res.json());
-  } catch (e) {
-    console.error("song lookup failed:", e);
-    return { ok: false, error: "We couldn't reach Apple Music just now — please try again." };
+  // Typed-in songs have nothing to look up; Apple is only asked about the rest.
+  const appleIds = picks.filter((p) => !p.manual).map((p) => p.trackId);
+  let tracks: Track[] = [];
+  if (appleIds.length > 0) {
+    try {
+      const res = await fetch(lookupUrl(appleIds), { cache: "no-store" });
+      if (!res.ok) throw new Error(`iTunes lookup ${res.status}`);
+      const body: unknown = await res.json();
+      // Not tracksFrom: its title-and-artist de-duplication is for search
+      // results, and must not drop a song the guest actually chose.
+      const results = (body as { results?: unknown[] })?.results ?? [];
+      tracks = results.flatMap((raw) => toTrack(raw) ?? []);
+    } catch (e) {
+      console.error("song lookup failed:", e);
+      return { ok: false, error: "We couldn't reach Apple Music just now — please try again." };
+    }
   }
   const byId = new Map(tracks.map((t) => [t.trackId, t]));
   const songs = picks.flatMap((p) => {
-    const t = byId.get(p.trackId);
+    const t = p.manual ? manualTrack(p.manual.title, p.manual.artist) : byId.get(p.trackId);
     return t ? [{ ...t, note: p.note }] : [];
   });
   if (songs.length !== picks.length) {
@@ -70,10 +87,12 @@ export async function submitSongs(input: {
     trackId: s.trackId,
     title: s.title,
     artist: s.artist,
+    composer: s.composer,
     artwork: s.artwork,
     previewUrl: s.previewUrl,
     appleUrl: s.appleUrl,
     explicit: s.explicit,
+    manual: s.manual,
     note: s.note || null,
   }));
 

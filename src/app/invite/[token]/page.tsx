@@ -33,11 +33,13 @@ export default async function GuestInvite({
     trackId: r.trackId,
     title: r.title,
     artist: r.artist,
+    composer: r.composer,
     album: null,
     artwork: r.artwork,
     previewUrl: r.previewUrl,
     appleUrl: r.appleUrl,
     explicit: r.explicit,
+    manual: r.manual,
     note: r.note ?? "",
   }));
   return (

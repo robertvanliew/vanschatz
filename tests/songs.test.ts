@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import {
+  byLine,
   cleanPicks,
+  composerFrom,
+  manualTrack,
   djList,
   largerArtwork,
   lookupUrl,
@@ -26,6 +29,7 @@ const september = {
   previewUrl: "https://audio-ssl.itunes.apple.com/preview.m4a",
   artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/ab/cd/source/100x100bb.jpg",
   trackExplicitness: "notExplicit",
+  primaryGenreName: "R&B/Soul",
 };
 
 describe("toTrack", () => {
@@ -34,12 +38,26 @@ describe("toTrack", () => {
       trackId: "1456623340",
       title: "September",
       artist: "Earth, Wind & Fire",
+      composer: null,
       album: "The Best Of Earth, Wind & Fire Vol. 1",
       artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/ab/cd/source/300x300bb.jpg",
       previewUrl: "https://audio-ssl.itunes.apple.com/preview.m4a",
       appleUrl: "https://music.apple.com/us/album/september/1456623332?i=1456623340",
       explicit: false,
+      manual: false,
     });
+  });
+
+  test("a classical recording names its composer", () => {
+    const berlioz = toTrack({
+      ...september,
+      trackName: "Symphonie fantastique, Op. 14, H 48: II. Un Bal",
+      artistName: "London Symphony Orchestra & Sir Colin Davis",
+      collectionName: "Berlioz: Symphonie fantastique",
+      primaryGenreName: "Classical",
+    });
+    expect(berlioz?.composer).toBe("Berlioz");
+    expect(byLine(berlioz!)).toBe("Berlioz · London Symphony Orchestra & Sir Colin Davis");
   });
 
   test("flags explicit songs", () => {
@@ -56,6 +74,51 @@ describe("toTrack", () => {
     expect(toTrack({ ...september, trackName: "" })).toBeNull();
     expect(toTrack(null)).toBeNull();
     expect(toTrack("September")).toBeNull();
+  });
+});
+
+// Album titles as Apple returns them, from real searches.
+describe("composerFrom", () => {
+  test("reads the composer before the colon on classical albums", () => {
+    expect(composerFrom("Berlioz: Symphonie fantastique", "Classical", "LSO")).toBe("Berlioz");
+    expect(composerFrom("Bach, J.S.: Orchestral Suites", "Classical", "Academy")).toBe("Bach, J.S.");
+  });
+  test("ignores series and compilations", () => {
+    expect(
+      composerFrom("Classical Music Library: The Essential Classics", "Classical", "NSO")
+    ).toBeNull();
+    expect(composerFrom("Sommernachtskonzert 2025 / Summer Night Concert", "Classical", "VPO")).toBeNull();
+  });
+  test("no guess when the album names two composers", () => {
+    expect(
+      composerFrom("Debussy: Three Nocturnes – Berlioz: Symphonie Fantastique (Live)", "Classical", "VPO")
+    ).toBeNull();
+  });
+  test("only classical — a musical's album title is not a composer", () => {
+    expect(composerFrom("Hamilton: An American Musical", "Soundtrack", "Cast")).toBeNull();
+  });
+  test("not when the artist already names them", () => {
+    expect(composerFrom("Pachelbel: Canon", "Classical", "Johann Pachelbel & Orchestra")).toBeNull();
+  });
+});
+
+describe("manualTrack", () => {
+  test("a typed-in song has no Apple link", () => {
+    const t = manualTrack("  Our   Song ", " Cousin Dave's Band ");
+    expect(t).toMatchObject({
+      title: "Our Song",
+      artist: "Cousin Dave's Band",
+      appleUrl: null,
+      manual: true,
+    });
+    expect(byLine(t!)).toBe("Cousin Dave's Band");
+  });
+  test("the same words from two guests count as one song", () => {
+    expect(manualTrack("Our Song", "Dave")?.trackId).toBe(manualTrack("our song!", " dave")?.trackId);
+  });
+  test("needs a title; the artist is optional", () => {
+    expect(manualTrack("", "Dave")).toBeNull();
+    expect(manualTrack("Hallelujah", "")?.artist).toBe("");
   });
 });
 
@@ -110,6 +173,21 @@ describe("cleanPicks", () => {
     const res = cleanPicks([{ trackId: "1", note: "x".repeat(500) }]);
     expect(res.ok && res.picks[0].note.length).toBe(MAX_NOTE);
   });
+  test("accepts a typed-in song and rebuilds its id from the words", () => {
+    const res = cleanPicks([
+      { trackId: "manual:anything", note: "", manual: { title: "Our Song", artist: "Dave" } },
+    ]);
+    expect(res.ok && res.picks).toEqual([
+      {
+        trackId: manualTrack("Our Song", "Dave")!.trackId,
+        note: "",
+        manual: { title: "Our Song", artist: "Dave" },
+      },
+    ]);
+  });
+  test("a typed-in song needs a title", () => {
+    expect(cleanPicks([{ trackId: "x", manual: { title: " ", artist: "Dave" } }]).ok).toBe(false);
+  });
   test("refuses nothing, too many, or a bad id", () => {
     expect(cleanPicks([]).ok).toBe(false);
     expect(cleanPicks("1,2").ok).toBe(false);
@@ -120,10 +198,17 @@ describe("cleanPicks", () => {
   });
 });
 
-const row = (trackId: string, requester: string, minute: number, extra: Partial<SongRow> = {}) => ({
+const row = (
+  trackId: string,
+  requester: string,
+  minute: number,
+  extra: Partial<SongRow> = {}
+): SongRow => ({
   trackId,
   title: `Song ${trackId}`,
   artist: "Artist",
+  composer: null,
+  manual: false,
   artwork: null,
   appleUrl: `https://music.apple.com/${trackId}`,
   explicit: false,
@@ -155,8 +240,17 @@ describe("djList", () => {
       rankSongs([row("a", "Ann", 1), row("a", "Ben", 2), row("b", "Cat", 3, { explicit: true })])
     );
     expect(text).toBe(
-      "1. Song a — Artist (2 requests)\n2. Song b — Artist (explicit — clean version please)"
+      "1. Song a — Artist [2 requests]\n2. Song b — Artist [explicit — clean version please]"
     );
+  });
+  test("names the composer, and flags songs typed in by hand", () => {
+    const text = djList(
+      rankSongs([
+        row("a", "Ann", 1, { title: "Un Bal", composer: "Berlioz", artist: "LSO" }),
+        row("manual:b", "Ben", 2, { title: "Our Song", artist: "", manual: true, appleUrl: null }),
+      ])
+    );
+    expect(text).toBe("1. Un Bal — Berlioz (LSO)\n2. Our Song [typed in by a guest]");
   });
 });
 
@@ -184,6 +278,18 @@ describe("songRequestEmail", () => {
       adminUrl: "x",
     });
     expect(email.subject.startsWith("Updated song picks")).toBe(true);
+  });
+
+  test("a typed-in song has no link and says so", () => {
+    const email = songRequestEmail({
+      requester: "May",
+      songs: [{ ...manualTrack("Our Song", "Dave")!, note: "" }],
+      updated: false,
+      adminUrl: "x",
+    });
+    expect(email.text).toContain("(typed in — not on Apple Music)");
+    expect(email.html).not.toContain('href="null"');
+    expect(email.html).toContain("typed in");
   });
 
   test("a guest's name and note can't inject markup", () => {

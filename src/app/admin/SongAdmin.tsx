@@ -1,6 +1,6 @@
 import { ConfirmButton, CopyTextButton } from "@/app/admin/AdminUi";
 import { deleteSongAction } from "@/app/admin/actions";
-import { djList, type RankedSong } from "@/lib/songs";
+import { byLine, djList, type RankedSong } from "@/lib/songs";
 
 /**
  * Every song guests have asked for, most-requested first, with who asked and
@@ -47,14 +47,26 @@ export default function SongAdmin({
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <a
-                    href={s.appleUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-medium text-ink underline-offset-4 hover:underline"
-                  >
-                    {s.title}
-                  </a>
+                  {s.appleUrl ? (
+                    <a
+                      href={s.appleUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-ink underline-offset-4 hover:underline"
+                    >
+                      {s.title}
+                    </a>
+                  ) : (
+                    <span className="font-medium text-ink">{s.title}</span>
+                  )}
+                  {s.manual && (
+                    <span
+                      title="Not on Apple Music, so the guest typed it in. Worth checking the spelling."
+                      className="rounded-full border border-[#e6d3ab] bg-[#faf4e6] px-2 py-0.5 text-[10px] tracking-wider text-[#8f6f3a] uppercase"
+                    >
+                      Typed in
+                    </span>
+                  )}
                   {s.explicit && (
                     <span className="rounded border border-line px-1 text-[10px] leading-4 text-ink-dim">
                       E
@@ -66,7 +78,7 @@ export default function SongAdmin({
                     </span>
                   )}
                 </div>
-                <div className="text-sm text-ink-dim">{s.artist}</div>
+                {byLine(s) && <div className="text-sm text-ink-dim">{byLine(s)}</div>}
                 <ul className="mt-1 space-y-0.5 text-xs text-ink-dim">
                   {s.requests.map((r, j) => (
                     <li key={j}>
