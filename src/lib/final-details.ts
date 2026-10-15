@@ -140,10 +140,11 @@ export type FinalEmailInput = {
 };
 
 /**
- * The website's colours: wisteria purple and leaf green on a lavender wash.
- * Every section is its own tinted card rather than text on one white sheet —
- * the couple found the all-white version hard to read — and body text is a
- * shade darker than the website's for contrast at small sizes.
+ * The flyer's look, which is the website's: warm cream, leaf-green serif
+ * names, gold labels, wisteria-purple buttons. The guest's own flyer opens the
+ * email, and every section below is its own bordered card so nothing reads as
+ * one long white sheet. Body text is a shade darker than the website's for
+ * contrast on a phone.
  */
 const C = {
   ink: "#2b2438",
@@ -151,10 +152,13 @@ const C = {
   soft: "#6a6380",
   purple: "#6b4f96",
   wisteria: "#8a6db1",
-  page: "#e4d9f1",
-  lavender: { bg: "#f5f0fb", border: "#d6c8ea", label: "#5a3f86" },
-  sage: { bg: "#eef4e7", border: "#c5d8b5", label: "#4c6342" },
-  cream: { bg: "#fdf9f1", border: "#eadcc3", label: "#7a5f30" },
+  green: "#5f7554",
+  gold: "#8f6f3a",
+  page: "#f3eee7",
+  serif: "font-family:Georgia,'Times New Roman',serif;",
+  lavender: { bg: "#f7f3fb", border: "#ddd0ec", label: "#8f6f3a" },
+  sage: { bg: "#f1f5ec", border: "#cfdcc4", label: "#8f6f3a" },
+  cream: { bg: "#fffdf9", border: "#e4dccd", label: "#8f6f3a" },
 };
 
 /** A full-width button; tables so Outlook draws it too. */
@@ -193,6 +197,7 @@ export function finalDetailsEmail(input: FinalEmailInput): {
   const songs = `${invite}#songs`;
   const gifts = `${invite}/registry`;
   const directions = mapsDirUrl();
+  const flyer = `${invite}/flyer`;
   const sans = "font-family:Arial,Helvetica,sans-serif;";
   const party =
     input.partySize === null
@@ -228,7 +233,7 @@ export function finalDetailsEmail(input: FinalEmailInput): {
     .map(
       (e, i) => `
       <div style="padding:14px 0;${i ? `border-top:1px solid ${C.cream.border};` : ""}">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:21px;font-weight:bold;color:${C.ink};">${esc(e.name)}</div>
+        <div style="${C.serif}font-size:22px;color:${C.green};">${esc(e.name)}</div>
         <div style="${sans}font-size:16px;line-height:1.5;color:${C.dim};margin-top:3px;">${esc(e.description)}</div>
       </div>`
     )
@@ -236,24 +241,32 @@ export function finalDetailsEmail(input: FinalEmailInput): {
 
   const html = `
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(copy.preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.page}" style="background:${C.page};background-image:linear-gradient(165deg,#e8e0f6 0%,#efe9f7 45%,#e3f1ee 100%);padding:24px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.page}" style="background:${C.page};padding:24px 12px;">
   <tr><td align="center">
     <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
 
-      <tr><td bgcolor="${C.purple}" style="background:${C.purple};background-image:linear-gradient(135deg,${C.purple} 0%,${C.wisteria} 100%);border-radius:22px;padding:38px 28px 32px;text-align:center;">
-        <div style="${sans}font-size:12px;letter-spacing:3px;color:#e6dcf4;text-transform:uppercase;">Julie &amp; Robert</div>
-        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:42px;line-height:1.15;color:#ffffff;margin-top:10px;">${esc(copy.heading)}</div>
-        <div style="${sans}font-size:17px;line-height:1.5;color:#f6f1fc;margin-top:14px;">Hi ${esc(input.name)}! ${esc(copy.intro)}</div>
+      <tr><td>
+        <a href="${invite}"><img src="${flyer}" width="560" alt="Julie &amp; Robert are getting married &mdash; ${esc(WEDDING.dateLabel)}, ${esc(WEDDING.venueName)}" style="display:block;width:100%;height:auto;border:0;border-radius:22px;"/></a>
       </td></tr>
+
+      ${card(
+        C.cream,
+        `
+        <div style="text-align:center;">
+          <div style="${sans}font-size:12px;letter-spacing:4px;color:${C.gold};text-transform:uppercase;">&#10022; Almost here &#10022;</div>
+          <div style="${C.serif}font-size:40px;line-height:1.15;color:${C.green};margin-top:10px;">${esc(copy.heading)}</div>
+          <div style="${sans}font-size:17px;line-height:1.5;color:${C.dim};margin-top:12px;">Hi ${esc(input.name)}! ${esc(copy.intro)}</div>
+        </div>`
+      )}
       ${rsvp}
 
       ${card(
         C.lavender,
         `
-        ${label("&#128205;", "The day", C.lavender.label)}
+        ${label("&#10022;", "The day", C.lavender.label)}
         <div style="${sans}font-size:22px;font-weight:bold;color:${C.ink};">${esc(WEDDING.dateLabel)}</div>
         <div style="${sans}font-size:17px;line-height:1.5;color:${C.dim};margin-top:4px;">${esc(WEDDING.timeLabel)} &middot; ${esc(WEDDING.scheduleLabel)}</div>
-        <div style="${sans}font-size:20px;font-weight:bold;color:${C.ink};margin-top:18px;">${esc(WEDDING.venueName)}</div>
+        <div style="${C.serif}font-size:22px;color:${C.green};margin-top:18px;">${esc(WEDDING.venueName)}</div>
         <div style="${sans}font-size:16px;line-height:1.5;color:${C.dim};margin:4px 0 18px;">${esc(WEDDING.venueAddress)}</div>
         ${button(directions, "Get directions", false)}
         ${
@@ -266,25 +279,26 @@ export function finalDetailsEmail(input: FinalEmailInput): {
       ${card(
         C.sage,
         `
-        ${label("&#10024;", "Two quick things", C.sage.label)}
+        ${label("&#10022;", "Two quick things", C.sage.label)}
         ${step(1, C.purple, copy.songsTitle, "What gets you on the dance floor? Choose up to 5 songs.", button(songs, "Pick my songs", true))}
-        ${step(2, C.sage.label, `Gifts <span style="font-weight:normal;color:${C.soft};">(optional)</span>`, esc(giftsLine), button(gifts, "See the gifts", false, C.sage.label), true)}`
+        ${step(2, C.green, `Gifts <span style="font-weight:normal;color:${C.soft};">(optional)</span>`, esc(giftsLine), button(gifts, "See the gifts", false, C.green), true)}`
       )}
 
       ${card(
         C.cream,
         `
-        ${label("&#127869;&#65039;", "What’s for dinner", C.cream.label)}
+        ${label("&#10022;", "What’s for dinner", C.cream.label)}
         <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:17px;line-height:1.5;color:${C.dim};margin-bottom:6px;">${esc(MENU.intro)}</div>
         ${menu}`
       )}
 
       <tr><td style="padding:14px 0 0;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-          <td bgcolor="${C.purple}" style="background:${C.purple};background-image:linear-gradient(135deg,${C.wisteria} 0%,${C.purple} 100%);border-radius:22px;padding:30px 28px 32px;text-align:center;">
-            <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:28px;color:#ffffff;">See you Saturday!</div>
-            <div style="${sans}font-size:16px;color:#f6f1fc;margin-top:8px;">With love, Julie &amp; Robert</div>
-            <div style="${sans}font-size:13px;color:#e6dcf4;margin-top:16px;">Your invitation: <a href="${invite}" style="color:#ffffff;">${esc(invite.replace(/^https?:\/\//, ""))}</a></div>
+          <td bgcolor="${C.cream.bg}" style="background:${C.cream.bg};border:2px solid ${C.cream.border};border-radius:22px;padding:30px 28px 32px;text-align:center;">
+            <div style="${sans}font-size:16px;letter-spacing:6px;color:${C.wisteria};">&#10049; &#10049; &#10049;</div>
+            <div style="${C.serif}font-style:italic;font-size:30px;color:${C.green};margin-top:8px;">See you Saturday!</div>
+            <div style="${sans}font-size:16px;color:${C.dim};margin-top:8px;">With love, Julie &amp; Robert</div>
+            <div style="${sans}font-size:13px;color:${C.soft};margin-top:16px;">Your invitation: <a href="${invite}" style="color:${C.purple};">${esc(invite.replace(/^https?:\/\//, ""))}</a></div>
           </td>
         </tr></table>
       </td></tr>
