@@ -139,35 +139,49 @@ export type FinalEmailInput = {
   fundLive: boolean;
 };
 
+/**
+ * The website's colours: wisteria purple and leaf green on a lavender wash.
+ * Every section is its own tinted card rather than text on one white sheet —
+ * the couple found the all-white version hard to read — and body text is a
+ * shade darker than the website's for contrast at small sizes.
+ */
 const C = {
-  ink: "#332c44",
-  dim: "#5f5873",
-  soft: "#8a8399",
+  ink: "#2b2438",
+  dim: "#463f58",
+  soft: "#6a6380",
   purple: "#6b4f96",
-  line: "#ece5f3",
-  cream: "#faf8f4",
+  wisteria: "#8a6db1",
+  page: "#e4d9f1",
+  lavender: { bg: "#f5f0fb", border: "#d6c8ea", label: "#5a3f86" },
+  sage: { bg: "#eef4e7", border: "#c5d8b5", label: "#4c6342" },
+  cream: { bg: "#fdf9f1", border: "#eadcc3", label: "#7a5f30" },
 };
 
 /** A full-width button; tables so Outlook draws it too. */
-function button(href: string, label: string, filled: boolean): string {
+function button(href: string, label: string, filled: boolean, tone = C.purple): string {
   const style = filled
-    ? `background:${C.purple};color:#ffffff;border:2px solid ${C.purple};`
-    : `background:#ffffff;color:${C.purple};border:2px solid #cdbde3;`;
+    ? `background:${tone};border:2px solid ${tone};`
+    : `background:#ffffff;border:2px solid ${tone};`;
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td align="center" style="border-radius:999px;${style}">
-        <a href="${href}" style="display:block;padding:15px 20px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;text-decoration:none;color:${filled ? "#ffffff" : C.purple};border-radius:999px;">${label}</a>
+      <td align="center" bgcolor="${filled ? tone : "#ffffff"}" style="border-radius:999px;${style}">
+        <a href="${href}" style="display:block;padding:15px 20px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;text-decoration:none;color:${filled ? "#ffffff" : tone};border-radius:999px;">${label}</a>
       </td>
     </tr></table>`;
 }
 
 /** A small uppercase label that starts every section, so the eye can find it. */
-function label(icon: string, text: string): string {
-  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;letter-spacing:2px;color:${C.purple};text-transform:uppercase;margin:0 0 14px;">${icon}&nbsp; ${text}</div>`;
+function label(icon: string, text: string, color: string): string {
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;letter-spacing:2px;color:${color};text-transform:uppercase;margin:0 0 14px;">${icon}&nbsp; ${text}</div>`;
 }
 
-const section = (inner: string, pad = "28px 32px") =>
-  `<tr><td style="padding:${pad};border-top:1px solid ${C.line};">${inner}</td></tr>`;
+/** One section as its own tinted card, with a gap above it. */
+const card = (tint: { bg: string; border: string }, inner: string) => `
+      <tr><td style="padding:14px 0 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td bgcolor="${tint.bg}" style="background:${tint.bg};border:2px solid ${tint.border};border-radius:20px;padding:26px 24px;">${inner}</td>
+        </tr></table>
+      </td></tr>`;
 
 export function finalDetailsEmail(input: FinalEmailInput): {
   subject: string;
@@ -189,20 +203,19 @@ export function finalDetailsEmail(input: FinalEmailInput): {
     : "Having you there is the gift. If you’d like to, here’s our registry.";
 
   const rsvp = input.nudgeRsvp
-    ? `
-    <tr><td style="padding:0 32px 28px;">
-      <div style="background:#fff7e8;border:2px solid #efd9a7;border-radius:16px;padding:22px;">
-        <div style="${sans}font-size:19px;font-weight:bold;color:${C.ink};">First: can you make it?</div>
+    ? card(
+        { bg: "#fff4dc", border: "#e8c77f" },
+        `
+        <div style="${sans}font-size:20px;font-weight:bold;color:${C.ink};">First: can you make it?</div>
         <div style="${sans}font-size:16px;line-height:1.5;color:${C.dim};margin:6px 0 16px;">We still need your RSVP. One tap.</div>
-        ${button(invite, "Reply yes or no", true)}
-      </div>
-    </td></tr>`
+        ${button(invite, "Reply yes or no", true)}`
+      )
     : "";
 
-  const step = (n: number, title: string, body: string, cta: string) => `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;"><tr>
-      <td width="44" valign="top">
-        <div style="width:34px;height:34px;line-height:34px;border-radius:17px;background:${C.purple};color:#fff;text-align:center;${sans}font-size:17px;font-weight:bold;">${n}</div>
+  const step = (n: number, tone: string, title: string, body: string, cta: string, last = false) => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 ${last ? 0 : 24}px;"><tr>
+      <td width="46" valign="top">
+        <div style="width:34px;height:34px;line-height:34px;border-radius:17px;background:${tone};color:#fff;text-align:center;${sans}font-size:17px;font-weight:bold;">${n}</div>
       </td>
       <td valign="top">
         <div style="${sans}font-size:19px;font-weight:bold;color:${C.ink};line-height:34px;">${title}</div>
@@ -214,56 +227,66 @@ export function finalDetailsEmail(input: FinalEmailInput): {
   const menu = MENU.entrees
     .map(
       (e, i) => `
-      <div style="padding:14px 0;${i ? `border-top:1px dashed ${C.line};` : ""}">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;color:${C.ink};">${esc(e.name)}</div>
-        <div style="${sans}font-size:15px;line-height:1.5;color:${C.dim};margin-top:3px;">${esc(e.description)}</div>
+      <div style="padding:14px 0;${i ? `border-top:1px solid ${C.cream.border};` : ""}">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:21px;font-weight:bold;color:${C.ink};">${esc(e.name)}</div>
+        <div style="${sans}font-size:16px;line-height:1.5;color:${C.dim};margin-top:3px;">${esc(e.description)}</div>
       </div>`
     )
     .join("");
 
   const html = `
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(copy.preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3eee7;padding:28px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${C.page}" style="background:${C.page};background-image:linear-gradient(165deg,#e8e0f6 0%,#efe9f7 45%,#e3f1ee 100%);padding:24px 12px;">
   <tr><td align="center">
-    <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:22px;overflow:hidden;">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
 
-      <tr><td style="padding:40px 32px 26px;text-align:center;">
-        <div style="${sans}font-size:12px;letter-spacing:3px;color:${C.soft};text-transform:uppercase;">Julie &amp; Robert</div>
-        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:40px;line-height:1.15;color:${C.purple};margin-top:10px;">${esc(copy.heading)}</div>
-        <div style="${sans}font-size:17px;line-height:1.5;color:${C.dim};margin-top:14px;">Hi ${esc(input.name)}! ${esc(copy.intro)}</div>
+      <tr><td bgcolor="${C.purple}" style="background:${C.purple};background-image:linear-gradient(135deg,${C.purple} 0%,${C.wisteria} 100%);border-radius:22px;padding:38px 28px 32px;text-align:center;">
+        <div style="${sans}font-size:12px;letter-spacing:3px;color:#e6dcf4;text-transform:uppercase;">Julie &amp; Robert</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:42px;line-height:1.15;color:#ffffff;margin-top:10px;">${esc(copy.heading)}</div>
+        <div style="${sans}font-size:17px;line-height:1.5;color:#f6f1fc;margin-top:14px;">Hi ${esc(input.name)}! ${esc(copy.intro)}</div>
       </td></tr>
       ${rsvp}
 
-      ${section(`
-        ${label("&#128205;", "The day")}
-        <div style="${sans}font-size:21px;font-weight:bold;color:${C.ink};">${esc(WEDDING.dateLabel)}</div>
-        <div style="${sans}font-size:17px;color:${C.dim};margin-top:4px;">${esc(WEDDING.timeLabel)} &middot; ${esc(WEDDING.scheduleLabel)}</div>
-        <div style="${sans}font-size:19px;font-weight:bold;color:${C.ink};margin-top:16px;">${esc(WEDDING.venueName)}</div>
-        <div style="${sans}font-size:16px;color:${C.dim};margin:4px 0 18px;">${esc(WEDDING.venueAddress)}</div>
+      ${card(
+        C.lavender,
+        `
+        ${label("&#128205;", "The day", C.lavender.label)}
+        <div style="${sans}font-size:22px;font-weight:bold;color:${C.ink};">${esc(WEDDING.dateLabel)}</div>
+        <div style="${sans}font-size:17px;line-height:1.5;color:${C.dim};margin-top:4px;">${esc(WEDDING.timeLabel)} &middot; ${esc(WEDDING.scheduleLabel)}</div>
+        <div style="${sans}font-size:20px;font-weight:bold;color:${C.ink};margin-top:18px;">${esc(WEDDING.venueName)}</div>
+        <div style="${sans}font-size:16px;line-height:1.5;color:${C.dim};margin:4px 0 18px;">${esc(WEDDING.venueAddress)}</div>
         ${button(directions, "Get directions", false)}
         ${
           party
-            ? `<div style="${sans}font-size:15px;color:${C.soft};margin-top:16px;text-align:center;">We have you down for <b style="color:${C.ink};">${party}</b>. Changed? <a href="${invite}" style="color:${C.purple};">Update it here</a>.</div>`
+            ? `<div style="${sans}font-size:15px;line-height:1.5;color:${C.dim};margin-top:16px;text-align:center;">We have you down for <b style="color:${C.ink};">${party}</b>. Changed? <a href="${invite}" style="color:${C.purple};font-weight:bold;">Update it here</a>.</div>`
             : ""
-        }
-      `)}
+        }`
+      )}
 
-      ${section(`
-        ${label("&#10024;", "Two quick things")}
-        ${step(1, copy.songsTitle, "What gets you on the dance floor? Choose up to 5 songs.", button(songs, "Pick my songs", true))}
-        ${step(2, "Gifts <span style=\"font-weight:normal;color:" + C.soft + ";\">(optional)</span>", esc(giftsLine), button(gifts, "See the gifts", false))}
-      `, "28px 32px 6px")}
+      ${card(
+        C.sage,
+        `
+        ${label("&#10024;", "Two quick things", C.sage.label)}
+        ${step(1, C.purple, copy.songsTitle, "What gets you on the dance floor? Choose up to 5 songs.", button(songs, "Pick my songs", true))}
+        ${step(2, C.sage.label, `Gifts <span style="font-weight:normal;color:${C.soft};">(optional)</span>`, esc(giftsLine), button(gifts, "See the gifts", false, C.sage.label), true)}`
+      )}
 
-      ${section(`
-        ${label("&#127869;&#65039;", "What’s for dinner")}
+      ${card(
+        C.cream,
+        `
+        ${label("&#127869;&#65039;", "What’s for dinner", C.cream.label)}
         <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:17px;line-height:1.5;color:${C.dim};margin-bottom:6px;">${esc(MENU.intro)}</div>
-        ${menu}
-      `)}
+        ${menu}`
+      )}
 
-      <tr><td style="padding:30px 32px 38px;text-align:center;background:${C.cream};border-top:1px solid ${C.line};">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:26px;color:${C.purple};">See you Saturday!</div>
-        <div style="${sans}font-size:16px;color:${C.dim};margin-top:8px;">With love, Julie &amp; Robert</div>
-        <div style="${sans}font-size:13px;color:${C.soft};margin-top:18px;">Your invitation: <a href="${invite}" style="color:${C.purple};">${esc(invite.replace(/^https?:\/\//, ""))}</a></div>
+      <tr><td style="padding:14px 0 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td bgcolor="${C.purple}" style="background:${C.purple};background-image:linear-gradient(135deg,${C.wisteria} 0%,${C.purple} 100%);border-radius:22px;padding:30px 28px 32px;text-align:center;">
+            <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:28px;color:#ffffff;">See you Saturday!</div>
+            <div style="${sans}font-size:16px;color:#f6f1fc;margin-top:8px;">With love, Julie &amp; Robert</div>
+            <div style="${sans}font-size:13px;color:#e6dcf4;margin-top:16px;">Your invitation: <a href="${invite}" style="color:#ffffff;">${esc(invite.replace(/^https?:\/\//, ""))}</a></div>
+          </td>
+        </tr></table>
       </td></tr>
 
     </table>

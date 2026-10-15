@@ -115,7 +115,7 @@ describe("finalDetailsEmail", () => {
 
   test("an attending guest sees their headcount, not an RSVP request", () => {
     const { html } = finalDetailsEmail({ ...base, edition: 1 });
-    expect(html).toContain("<b style=\"color:#332c44;\">2 guests</b>");
+    expect(html).toMatch(/We have you down for <b[^>]*>2 guests<\/b>/);
     expect(html).not.toContain("can you make it?");
   });
 
