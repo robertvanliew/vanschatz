@@ -28,6 +28,8 @@ import { CopyLinkButton, ConfirmButton } from "@/app/admin/AdminUi";
 import FundAdmin from "@/app/admin/FundAdmin";
 import RegistryAnnouncement from "@/app/admin/RegistryAnnouncement";
 import SongAdmin from "@/app/admin/SongAdmin";
+import FinalDetailsPanel from "@/app/admin/FinalDetailsPanel";
+import { APPROVAL_KEY } from "@/lib/final-details";
 import { rankSongs } from "@/lib/songs";
 
 export const dynamic = "force-dynamic";
@@ -521,6 +523,17 @@ export default async function AdminDashboard({
           ))}
         </ul>
       </section>
+
+      <FinalDetailsPanel
+        guests={guests}
+        approved={settings[APPROVAL_KEY] === "yes"}
+        saved={saved}
+        sentCount={Number(sentCount ?? 0)}
+        failedCount={Number(failedCount ?? 0)}
+        card={card}
+        primaryBtn={primaryBtn}
+        ghostBtn={ghostBtn}
+      />
 
       <SongAdmin songs={songs} guestsWhoAsked={guestsWhoAsked} card={card} ghostBtn={ghostBtn} />
 

@@ -14,6 +14,12 @@ import {
   type AnnouncementGuest,
 } from "@/lib/registry-email";
 import { FUND_KEYS } from "@/lib/fund";
+import {
+  FINAL_KEYS,
+  finalDetailsEmail,
+  planFinalDetails,
+  type Edition,
+} from "@/lib/final-details";
 
 const INVITE_KEY = "invite";
 const INVITE_SUBJECT = "You're invited — Julie & Robert's wedding";
@@ -207,5 +213,84 @@ export async function sendWeddingUpdate(): Promise<{ sent: number; skipped: numb
     }
   }
 
+  return { sent, skipped: skipped.length, failed };
+}
+
+/* -------------------------------------------------- final details email */
+
+async function fundIsLive(): Promise<boolean> {
+  const link = await db.setting.findUnique({ where: { key: FUND_KEYS.payLink } });
+  return Boolean(link?.value.trim());
+}
+
+/**
+ * Every version of the final-details email, to the couple only: both editions,
+ * as an attending guest, plus edition 1 as a guest who hasn't replied.
+ */
+export async function sendFinalDetailsTest(): Promise<{ ok: boolean; reason?: string }> {
+  const self = await db.guest.findFirst({
+    where: { email: { equals: COUPLE_EMAIL, mode: "insensitive" } },
+  });
+  if (!self) return { ok: false, reason: `No guest on the list has the email ${COUPLE_EMAIL}.` };
+  const fundLive = await fundIsLive();
+  const versions: { edition: Edition; label: string; nudgeRsvp: boolean }[] = [
+    { edition: 1, label: "Thursday, attending guest", nudgeRsvp: false },
+    { edition: 1, label: "Thursday, hasn't replied", nudgeRsvp: true },
+    { edition: 2, label: "Friday, attending guest", nudgeRsvp: false },
+  ];
+  for (const v of versions) {
+    const email = finalDetailsEmail({
+      edition: v.edition,
+      name: self.name,
+      token: self.token,
+      nudgeRsvp: v.nudgeRsvp,
+      partySize: v.nudgeRsvp ? null : self.partySize || 2,
+      fundLive,
+    });
+    await sendMessage("email", COUPLE_EMAIL, email.text, `[TEST — ${v.label}] ${email.subject}`, email.html);
+  }
+  return { ok: true };
+}
+
+/**
+ * Send one edition to everyone who should get it. Each success is logged as it
+ * happens, so a retry after a failure never emails anyone twice.
+ */
+export async function sendFinalDetails(
+  edition: Edition
+): Promise<{ sent: number; skipped: number; failed: number }> {
+  const guests = await db.guest.findMany({ include: { reminders: true } });
+  const { sends, skipped } = planFinalDetails(guests, edition);
+  const byId = new Map(guests.map((g) => [g.id, g]));
+  const fundLive = await fundIsLive();
+  const key = FINAL_KEYS[edition];
+  let sent = 0;
+  let failed = 0;
+
+  for (const plan of sends) {
+    const g = byId.get(plan.guestId);
+    if (!g) continue;
+    if (sent + failed > 0) await new Promise((resolve) => setTimeout(resolve, 150));
+    const email = finalDetailsEmail({
+      edition,
+      name: g.name,
+      token: g.token,
+      nudgeRsvp: plan.nudgeRsvp,
+      partySize: plan.partySize,
+      fundLive,
+    });
+    try {
+      const { simulated } = await sendMessage("email", plan.to, email.text, email.subject, email.html);
+      await db.reminderLog.upsert({
+        where: { guestId_scheduleKey_channel: { guestId: g.id, scheduleKey: key, channel: "email" } },
+        create: { guestId: g.id, scheduleKey: key, channel: "email", simulated },
+        update: { simulated, sentAt: new Date() },
+      });
+      sent++;
+    } catch (err) {
+      failed++;
+      console.error(`final details ${edition} failed for guest ${g.id}:`, err);
+    }
+  }
   return { sent, skipped: skipped.length, failed };
 }

@@ -13,7 +13,10 @@ import {
   sendAllInvites,
   sendWeddingUpdateTest,
   sendWeddingUpdate,
+  sendFinalDetailsTest,
+  sendFinalDetails,
 } from "@/lib/invites";
+import { APPROVAL_KEY, parseEdition } from "@/lib/final-details";
 import { writeSettings } from "@/lib/settings";
 import { SHIPPING_KEYS } from "@/lib/shipping";
 import { FUND_KEYS } from "@/lib/fund";
@@ -117,6 +120,33 @@ export async function sendRegistryAnnouncementAction(): Promise<void> {
   const { sent, failed } = await sendWeddingUpdate();
   revalidatePath("/admin");
   redirect(`/admin?saved=registry-sent&sent=${sent}&failed=${failed}`);
+}
+
+/* ------------------------------------------------------- final details */
+
+export async function testFinalDetailsAction(): Promise<void> {
+  await requireAdmin();
+  await sendFinalDetailsTest();
+  redirect("/admin?saved=final-test#final-details");
+}
+
+/** Lets the scheduled sends go out. Pausing again stops any that haven't. */
+export async function setFinalDetailsApprovalAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const approved = formData.get("approved") === "yes";
+  await writeSettings({ [APPROVAL_KEY]: approved ? "yes" : "" });
+  revalidatePath("/admin");
+  redirect(`/admin?saved=${approved ? "final-approved" : "final-paused"}#final-details`);
+}
+
+/** Backup if a scheduled send didn't happen. Only reaches guests it hasn't. */
+export async function sendFinalDetailsNowAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const edition = parseEdition(String(formData.get("edition")));
+  if (!edition) redirect("/admin#final-details");
+  const { sent, failed } = await sendFinalDetails(edition);
+  revalidatePath("/admin");
+  redirect(`/admin?saved=final-sent&sent=${sent}&failed=${failed}#final-details`);
 }
 
 /**
