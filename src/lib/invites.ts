@@ -20,6 +20,7 @@ import {
   planFinalDetails,
   type Edition,
 } from "@/lib/final-details";
+import { cleanGiftTitle, planThankYou, THANKS_KEY, thankYouEmail } from "@/lib/thank-you";
 
 const INVITE_KEY = "invite";
 const INVITE_SUBJECT = "You're invited — Julie & Robert's wedding";
@@ -290,6 +291,72 @@ export async function sendFinalDetails(
     } catch (err) {
       failed++;
       console.error(`final details ${edition} failed for guest ${g.id}:`, err);
+    }
+  }
+  return { sent, skipped: skipped.length, failed };
+}
+
+/* ------------------------------------------------------------ thank you */
+
+/** The photo from the day, served from public/thank-you/. */
+export const THANKS_PHOTO_PATH = "/thank-you/photo.jpg";
+const thanksPhotoUrl = () => `${baseUrl()}${THANKS_PHOTO_PATH}`;
+
+/** Distinct songs guests asked for, for the "day in numbers" band. */
+async function songRequestCount(): Promise<number> {
+  const rows = await db.songRequest.findMany({ select: { trackId: true }, distinct: ["trackId"] });
+  return rows.length;
+}
+
+/**
+ * Both versions of the thank-you, to the couple only: plain, and with a gift
+ * line using real claimed gifts so the wording can be checked.
+ */
+export async function sendThankYouTest(): Promise<{ ok: boolean; reason?: string }> {
+  const self = await db.guest.findFirst({
+    where: { email: { equals: COUPLE_EMAIL, mode: "insensitive" } },
+  });
+  if (!self) return { ok: false, reason: `No guest on the list has the email ${COUPLE_EMAIL}.` };
+  const sample = await db.giftClaim.findMany({ take: 2, include: { gift: true } });
+  const versions = [
+    { label: "guest without a gift", gifts: [] as string[] },
+    { label: "guest who claimed gifts", gifts: sample.map((c) => cleanGiftTitle(c.gift.title)) },
+  ];
+  for (const v of versions) {
+    const email = thankYouEmail({ name: self.name, gifts: v.gifts, photoUrl: thanksPhotoUrl(), songRequests: await songRequestCount(), siteUrl: baseUrl() });
+    await sendMessage("email", COUPLE_EMAIL, email.text, `[TEST — ${v.label}] ${email.subject}`, email.html);
+  }
+  return { ok: true };
+}
+
+/** Thank everyone who said yes, except `exclude`. Logged per guest, so never twice. */
+export async function sendThankYou(
+  exclude: string[] = []
+): Promise<{ sent: number; skipped: number; failed: number }> {
+  const guests = await db.guest.findMany({
+    include: { reminders: true, giftClaims: { include: { gift: true } } },
+  });
+  const { sends, skipped } = planThankYou(guests, exclude);
+  const songRequests = await songRequestCount();
+  const byId = new Map(guests.map((g) => [g.id, g]));
+  let sent = 0;
+  let failed = 0;
+  for (const plan of sends) {
+    const g = byId.get(plan.guestId);
+    if (!g) continue;
+    if (sent + failed > 0) await new Promise((resolve) => setTimeout(resolve, 150));
+    const email = thankYouEmail({ name: g.name, gifts: plan.gifts, photoUrl: thanksPhotoUrl(), songRequests, siteUrl: baseUrl() });
+    try {
+      const { simulated } = await sendMessage("email", plan.to, email.text, email.subject, email.html);
+      await db.reminderLog.upsert({
+        where: { guestId_scheduleKey_channel: { guestId: g.id, scheduleKey: THANKS_KEY, channel: "email" } },
+        create: { guestId: g.id, scheduleKey: THANKS_KEY, channel: "email", simulated },
+        update: { simulated, sentAt: new Date() },
+      });
+      sent++;
+    } catch (err) {
+      failed++;
+      console.error(`thank-you failed for guest ${g.id}:`, err);
     }
   }
   return { sent, skipped: skipped.length, failed };
