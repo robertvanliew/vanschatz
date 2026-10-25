@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import FloralHero from "@/components/FloralHero";
 import Countdown from "@/components/Countdown";
 import ShaderBackground from "@/components/ShaderBackground";
@@ -47,6 +48,16 @@ export default function InvitePage({
       {/* Animated water-plane gradient behind everything; the hero wash fades
           into it so there's no seam. */}
       <ShaderBackground />
+
+      {/* The wedding has happened: anyone landing here from an old invitation
+          link or the printed QR should find the film first. */}
+      <Link
+        href="/video"
+        className="relative z-50 block bg-[#3b2d55] px-4 py-2.5 text-center text-sm text-white transition-colors hover:bg-[#4a3a69]"
+      >
+        <span className="tracking-wide">Our wedding film is here</span>
+        <span className="ml-2 font-medium underline underline-offset-4">Watch now &rarr;</span>
+      </Link>
 
       <SiteHeader registryHref={registryHref} homeHref={homeHref} />
 
